@@ -3,8 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Image from 'next/image';
-import Navbar from '@/app/components/Navbar';
-import Footer from '@/app/components/Footer';
 
 interface TourDetails {
   id: number;
@@ -137,14 +135,12 @@ export default function TourDetailPage() {
   if (loading) {
     return (
       <main className="min-h-screen bg-white">
-        <Navbar />
         <div className="max-w-6xl mx-auto p-4 py-20">
           <div className="flex flex-col items-center justify-center h-64">
             <div className="w-16 h-16 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
             <p className="mt-4 text-gray-600">Loading tour details...</p>
           </div>
         </div>
-        <Footer />
       </main>
     );
   }
@@ -152,7 +148,6 @@ export default function TourDetailPage() {
   if (error || !tour) {
     return (
       <main className="min-h-screen bg-white">
-        <Navbar />
         <div className="max-w-6xl mx-auto p-4 py-20">
           <div className="flex flex-col items-center justify-center h-64">
             <div className="text-red-600 text-xl mb-4">⚠️</div>
@@ -160,15 +155,12 @@ export default function TourDetailPage() {
             <p className="text-gray-600 mt-2">{error || 'Unable to load tour information.'}</p>
           </div>
         </div>
-        <Footer />
       </main>
     );
   }
   
   return (
     <main className="min-h-screen bg-white">
-      <Navbar />
-      
       {/* Hero image section */}
       <div className="relative h-[60vh] w-full">
         <Image 
@@ -310,8 +302,6 @@ export default function TourDetailPage() {
           </div>
         </div>
       </div>
-      
-      <Footer />
     </main>
   );
 } 
