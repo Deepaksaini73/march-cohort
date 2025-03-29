@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import Navbar from './components/Navbar';
+import OurfeaturTool from './components/ourfeature tool/OurfeaturTool';
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState('Tours');
@@ -10,6 +11,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
+      <OurfeaturTool />
       
       {/* Hero Section with Banner */}
       <section className="relative w-full">
