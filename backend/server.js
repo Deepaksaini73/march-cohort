@@ -5,6 +5,7 @@ const dotenv = require('dotenv');
 const rateLimit = require('express-rate-limit');
 const config = require('./config/config');
 const placesRoutes = require('./routes/placesRoutes');
+const categoriesRoutes = require('./routes/categoriesRoutes');
 const errorHandler = require('./middleware/errorHandler');
 
 // Load environment variables
@@ -59,6 +60,7 @@ app.get('/api/health', (req, res) => {
 
 // API routes
 app.use('/api/places', placesRoutes);
+app.use('/api/categories', categoriesRoutes);
 
 // 404 handler
 app.use((req, res) => {
