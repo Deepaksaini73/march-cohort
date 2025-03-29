@@ -13,12 +13,13 @@ const ThemeToggle = () => {
   return (
     <button 
       onClick={toggleTheme} 
-      className="theme-toggle rounded-full p-1 hover:bg-gray-100"
+      className="theme-toggle rounded-full p-1 hover:bg-gray-100 flex items-center justify-center"
       aria-label="Toggle theme"
+      title="Toggle theme"
     >
       {isDark ? (
         <svg 
-          className="w-5 h-5" 
+          className="w-4 h-4" 
           fill="none" 
           stroke="currentColor" 
           viewBox="0 0 24 24" 
@@ -33,7 +34,7 @@ const ThemeToggle = () => {
         </svg>
       ) : (
         <svg 
-          className="w-5 h-5" 
+          className="w-4 h-4" 
           fill="none" 
           stroke="currentColor" 
           viewBox="0 0 24 24" 
