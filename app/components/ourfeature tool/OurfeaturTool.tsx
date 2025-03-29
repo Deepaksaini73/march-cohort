@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
@@ -118,12 +119,17 @@ const TourCard = ({
           fill
           className="object-cover"
         />
+<<<<<<< HEAD
         <button 
           className={`absolute top-4 right-4 p-1.5 rounded-full ${isFavorite ? 'bg-pink-500 text-white' : 'bg-white/80 text-gray-600'} transition-colors`}
           onClick={handleToggleFavorite}
           aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
         >
           <Heart className={`h-5 w-5 ${isFavorite ? 'fill-current' : ''}`} />
+=======
+        <button className="absolute top-4 right-4 p-1.5 rounded-full bg-white/80" title="Add to favorites">
+          <Heart className="h-5 w-5 text-gray-600" />
+>>>>>>> 3562f1ec18a96aecc6a9f3b6a1b7d534a613515a
         </button>
         <div className="absolute top-4 left-4">
           <span className={`px-3 py-1 rounded-full text-sm font-medium ${
@@ -165,7 +171,7 @@ const TourCard = ({
         
         <div className="flex justify-between items-center mb-3">
           <div>
-            <span className="font-bold text-xl">${price.toFixed(2)}</span>
+            <span className="font-bold text-xl">₹{(price * 83.20).toFixed(2)}</span>
             <span className="text-gray-500 text-sm"> / person</span>
           </div>
           <button 
@@ -194,9 +200,13 @@ const TourCard = ({
 };
 
 const OurFeatureTool = () => {
+<<<<<<< HEAD
   const router = useRouter();
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const hasMounted = useRef(false);
+=======
+  const [activeFilter, setActiveFilter] = useState('All');
+>>>>>>> 3562f1ec18a96aecc6a9f3b6a1b7d534a613515a
   
   const tours = [
     {
@@ -208,7 +218,7 @@ const OurFeatureTool = () => {
       days: 2,
       nights: 3,
       guests: "4-6",
-      price: 48.25,
+      price: 4014.40,
       image: "/images/boating.jpg"
     },
     {
@@ -220,7 +230,7 @@ const OurFeatureTool = () => {
       days: 3,
       nights: 3,
       guests: "4-6",
-      price: 17.32,
+      price: 1441.02,
       image: "/images/santorini.jpg"
     },
     {
@@ -232,7 +242,7 @@ const OurFeatureTool = () => {
       days: 7,
       nights: 6,
       guests: "4-6",
-      price: 15.63,
+      price: 1300.42,
       image: "/images/maldives.jpg"
     },
     {
@@ -244,7 +254,7 @@ const OurFeatureTool = () => {
       days: 2,
       nights: 3,
       guests: "4-6",
-      price: 48.25,
+      price: 4014.40,
       image: "/images/boating.jpg"
     },
     {
@@ -256,7 +266,7 @@ const OurFeatureTool = () => {
       days: 3,
       nights: 3,
       guests: "4-6",
-      price: 17.32,
+      price: 1441.02,
       image: "/images/santorini.jpg"
     },
     {
@@ -268,11 +278,12 @@ const OurFeatureTool = () => {
       days: 7,
       nights: 6,
       guests: "4-6",
-      price: 15.63,
+      price: 1300.42,
       image: "/images/maldives.jpg"
     },
   ];
 
+<<<<<<< HEAD
   const toggleDropdown = (dropdown: string, e: React.MouseEvent) => {
     if (!hasMounted.current) return;
     
@@ -299,6 +310,9 @@ const OurFeatureTool = () => {
       document.removeEventListener('click', handleClickOutside);
     };
   }, []);
+=======
+  const filters = ['All', 'Categories', 'Duration', 'Rating', 'Price Range'];
+>>>>>>> 3562f1ec18a96aecc6a9f3b6a1b7d534a613515a
 
   return (
     <section className="py-12 px-4 bg-gray-50">
@@ -307,6 +321,7 @@ const OurFeatureTool = () => {
         <p className="text-gray-600 mb-8">Favorite destinations based on customer reviews</p>
         
         <div className="flex flex-wrap gap-4 mb-8">
+<<<<<<< HEAD
           <div className="relative">
             <button 
               className={`bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-full text-sm font-medium flex items-center ${activeDropdown === 'categories' ? 'bg-gray-200' : ''}`}
@@ -399,6 +414,19 @@ const OurFeatureTool = () => {
               </div>
             )}
           </div>
+=======
+          {filters.map((filter) => (
+            <button 
+              key={filter}
+              className={`bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-full text-sm font-medium ${
+                activeFilter === filter ? 'bg-gray-200' : ''
+              }`}
+              onClick={() => setActiveFilter(filter)}
+            >
+              {filter}
+            </button>
+          ))}
+>>>>>>> 3562f1ec18a96aecc6a9f3b6a1b7d534a613515a
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
