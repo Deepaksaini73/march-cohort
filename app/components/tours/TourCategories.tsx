@@ -3,60 +3,70 @@
 import Image from 'next/image';
 import Link from 'next/link';
 
+// Import all images
+import mountainsImg from '@/assets/mountains.png';
+import safariImg from '@/assets/safari.png';
+import desertImg from '@/assets/desert.png';
+import flowerImg from '@/assets/flower.png';
+import beachImg from '@/assets/beach.png';
+import templesImg from '@/assets/temples.png';
+import yachtImg from '@/assets/yacht.png';
+import valleyImg from '@/assets/bg-sea-1.png';
+
 const categories = [
   {
     id: 1,
     title: 'Mountain',
-    image: '/images/ocean-wave.jpg',
+    image: mountainsImg,
     count: '356 Tours, 264 Activities',
     slug: 'mountain'
   },
   {
     id: 2,
     title: 'Safari',
-    image: '/images/maldives.jpg',
+    image: safariImg,
     count: '356 Tours, 264 Activities',
     slug: 'safari'
   },
   {
     id: 3,
     title: 'Desert',
-    image: '/images/santorini.jpg',
+    image: desertImg,
     count: '356 Tours, 264 Activities',
     slug: 'desert'
   },
   {
     id: 4,
     title: 'Flower',
-    image: '/images/ocean-wave.jpg',
+    image: flowerImg,
     count: '356 Tours, 264 Activities',
     slug: 'flower'
   },
   {
     id: 5,
     title: 'Beach',
-    image: '/images/maldives.jpg',
+    image: beachImg,
     count: '356 Tours, 264 Activities',
     slug: 'beach'
   },
   {
     id: 6,
     title: 'Temples',
-    image: '/images/santorini.jpg',
+    image: templesImg,
     count: '356 Tours, 264 Activities',
     slug: 'temples'
   },
   {
     id: 7,
     title: 'Yacht',
-    image: '/images/boating.jpg',
+    image: yachtImg,
     count: '356 Tours, 264 Activities',
     slug: 'yacht'
   },
   {
     id: 8,
     title: 'Valley',
-    image: '/images/ocean-wave.jpg',
+    image: valleyImg,
     count: '356 Tours, 264 Activities',
     slug: 'valley'
   }

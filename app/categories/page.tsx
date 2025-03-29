@@ -1,61 +1,75 @@
+"use client";
+
 import Image from 'next/image';
 import Link from 'next/link';
+
+// Import all images
+import mountainsImg from '@/assets/mountains.png';
+import safariImg from '@/assets/safari.png';
+import desertImg from '@/assets/desert.png';
+import flowerImg from '@/assets/flower.png';
+import beachImg from '@/assets/beach.png';
+import templesImg from '@/assets/temples.png';
+import yachtImg from '@/assets/yacht.png';
+import valleyImg from '@/assets/bg-sea-1.png';
+import bgSea2 from '@/assets/bg-sea-2.png';
+import bgSea3 from '@/assets/bg-sea-3.png';
 
 // Extended list of categories
 const allCategories = [
   {
     id: 1,
     title: 'Mountain',
-    image: '/images/ocean-wave.jpg',
+    image: mountainsImg,
     count: '356 Tours, 264 Activities',
     slug: 'mountain'
   },
   {
     id: 2,
     title: 'Safari',
-    image: '/images/maldives.jpg',
+    image: safariImg,
     count: '356 Tours, 264 Activities',
     slug: 'safari'
   },
   {
     id: 3,
     title: 'Desert',
-    image: '/images/santorini.jpg',
+    image: desertImg,
     count: '356 Tours, 264 Activities',
     slug: 'desert'
   },
   {
     id: 4,
     title: 'Flower',
-    image: '/images/ocean-wave.jpg',
+    image: flowerImg,
     count: '356 Tours, 264 Activities',
     slug: 'flower'
   },
   {
     id: 5,
     title: 'Beach',
-    image: '/images/maldives.jpg',
+    image: beachImg,
     count: '356 Tours, 264 Activities',
     slug: 'beach'
   },
   {
     id: 6,
     title: 'Temples',
-    image: '/images/santorini.jpg',
+    image: templesImg,
     count: '356 Tours, 264 Activities',
     slug: 'temples'
   },
   {
     id: 7,
     title: 'Yacht',
-    image: '/images/boating.jpg',
+    image: yachtImg,
     count: '356 Tours, 264 Activities',
     slug: 'yacht'
   },
   {
     id: 8,
     title: 'Valley',
-    image: '/images/ocean-wave.jpg',
+    image: valleyImg,
     count: '356 Tours, 264 Activities',
     slug: 'valley'
   },
@@ -63,56 +77,56 @@ const allCategories = [
   {
     id: 9,
     title: 'Hiking',
-    image: '/images/ocean-wave.jpg',
+    image: mountainsImg,
     count: '285 Tours, 195 Activities',
     slug: 'hiking'
   },
   {
     id: 10,
     title: 'Camping',
-    image: '/images/maldives.jpg',
+    image: bgSea2,
     count: '210 Tours, 185 Activities',
     slug: 'camping'
   },
   {
     id: 11,
     title: 'Cultural',
-    image: '/images/santorini.jpg',
+    image: templesImg,
     count: '325 Tours, 240 Activities',
     slug: 'cultural'
   },
   {
     id: 12,
     title: 'Adventure',
-    image: '/images/boating.jpg',
+    image: safariImg,
     count: '410 Tours, 320 Activities',
     slug: 'adventure'
   },
   {
     id: 13,
     title: 'Cruise',
-    image: '/images/boating.jpg',
+    image: yachtImg,
     count: '180 Tours, 150 Activities',
     slug: 'cruise'
   },
   {
     id: 14,
     title: 'Wildlife',
-    image: '/images/maldives.jpg',
+    image: safariImg,
     count: '290 Tours, 230 Activities',
     slug: 'wildlife'
   },
   {
     id: 15,
     title: 'Festivals',
-    image: '/images/santorini.jpg',
+    image: bgSea3,
     count: '170 Tours, 140 Activities',
     slug: 'festivals'
   },
   {
     id: 16,
     title: 'City',
-    image: '/images/ocean-wave.jpg',
+    image: templesImg,
     count: '380 Tours, 320 Activities',
     slug: 'city'
   }
