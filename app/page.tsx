@@ -1,20 +1,20 @@
 "use client";
 
-import { useState } from 'react';
-import Image from 'next/image';
 import Navbar from './components/Navbar';
-import OurfeaturTool from './components/ourfeature tool/OurfeaturTool';
-
+import OurFeatureTool from './components/ourfeature tool/OurfeaturTool';
 import Hero from './components/hero/Hero';
-
+import TourCategories from './components/tours/TourCategories';
+import WhyTravelWithUs from './components/whyus/WhyTravelWithUs';
+import TestimonialSlider from './components/testimonials/TestimonialSlider';
 
 export default function Home() {
-  const [activeTab, setActiveTab] = useState('Tours');
-  
   return (
     <main className="min-h-screen bg-white">
       <Navbar />
-      {/* <Hero /> */}
+      <Hero />
+      <TourCategories />
+      <WhyTravelWithUs />
+      <TestimonialSlider />
     </main>
   );
 }

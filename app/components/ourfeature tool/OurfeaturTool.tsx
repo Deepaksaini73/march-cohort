@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Heart } from 'lucide-react';
 import Image from 'next/image';
 
@@ -33,7 +34,7 @@ const TourCard = ({
           fill
           className="object-cover"
         />
-        <button className="absolute top-4 right-4 p-1.5 rounded-full bg-white/80">
+        <button className="absolute top-4 right-4 p-1.5 rounded-full bg-white/80" title="Add to favorites">
           <Heart className="h-5 w-5 text-gray-600" />
         </button>
         <div className="absolute top-4 left-4">
@@ -71,7 +72,7 @@ const TourCard = ({
         
         <div className="flex justify-between items-center mb-3">
           <div>
-            <span className="font-bold text-xl">${price.toFixed(2)}</span>
+            <span className="font-bold text-xl">₹{(price * 83.20).toFixed(2)}</span>
             <span className="text-gray-500 text-sm"> / person</span>
           </div>
           <button className="bg-white border border-gray-300 hover:bg-gray-50 text-gray-800 px-4 py-2 rounded-full text-sm font-medium">
@@ -88,6 +89,8 @@ const TourCard = ({
 };
 
 const OurFeatureTool = () => {
+  const [activeFilter, setActiveFilter] = useState('All');
+  
   const tours = [
     {
       id: 1,
@@ -98,7 +101,7 @@ const OurFeatureTool = () => {
       days: 2,
       nights: 3,
       guests: "4-6",
-      price: 48.25,
+      price: 4014.40,
       image: "/images/boating.jpg"
     },
     {
@@ -110,7 +113,7 @@ const OurFeatureTool = () => {
       days: 3,
       nights: 3,
       guests: "4-6",
-      price: 17.32,
+      price: 1441.02,
       image: "/images/santorini.jpg"
     },
     {
@@ -122,7 +125,7 @@ const OurFeatureTool = () => {
       days: 7,
       nights: 6,
       guests: "4-6",
-      price: 15.63,
+      price: 1300.42,
       image: "/images/maldives.jpg"
     },
     {
@@ -134,7 +137,7 @@ const OurFeatureTool = () => {
       days: 2,
       nights: 3,
       guests: "4-6",
-      price: 48.25,
+      price: 4014.40,
       image: "/images/boating.jpg"
     },
     {
@@ -146,7 +149,7 @@ const OurFeatureTool = () => {
       days: 3,
       nights: 3,
       guests: "4-6",
-      price: 17.32,
+      price: 1441.02,
       image: "/images/santorini.jpg"
     },
     {
@@ -158,10 +161,12 @@ const OurFeatureTool = () => {
       days: 7,
       nights: 6,
       guests: "4-6",
-      price: 15.63,
+      price: 1300.42,
       image: "/images/maldives.jpg"
     },
   ];
+
+  const filters = ['All', 'Categories', 'Duration', 'Rating', 'Price Range'];
 
   return (
     <section className="py-12 px-4 bg-gray-50">
@@ -170,41 +175,17 @@ const OurFeatureTool = () => {
         <p className="text-gray-600 mb-8">Favorite destinations based on customer reviews</p>
         
         <div className="flex flex-wrap gap-4 mb-8">
-          <div className="relative">
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-full text-sm font-medium flex items-center">
-              Categories
-              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
+          {filters.map((filter) => (
+            <button 
+              key={filter}
+              className={`bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-full text-sm font-medium ${
+                activeFilter === filter ? 'bg-gray-200' : ''
+              }`}
+              onClick={() => setActiveFilter(filter)}
+            >
+              {filter}
             </button>
-          </div>
-          
-          <div className="relative">
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-full text-sm font-medium flex items-center">
-              Duration
-              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="relative">
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-full text-sm font-medium flex items-center">
-              Review / Rating
-              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
-          
-          <div className="relative">
-            <button className="bg-gray-100 hover:bg-gray-200 text-gray-800 px-4 py-2 rounded-full text-sm font-medium flex items-center">
-              Price range
-              <svg className="w-4 h-4 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </button>
-          </div>
+          ))}
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
