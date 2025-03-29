@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { Search, Filter } from 'lucide-react';
+import { Search, Filter, Star, MapPin, Users, Sun, Moon, ChevronRight, Heart, ArrowUpCircle } from 'lucide-react';
 
 interface Tour {
   id: number;
@@ -27,6 +27,51 @@ const ToursPage = () => {
   const [selectedPriceRange, setSelectedPriceRange] = useState('All');
   const [sortBy, setSortBy] = useState('recommended');
   const [showBackToTop, setShowBackToTop] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  const [favorites, setFavorites] = useState<number[]>([]);
+  const [animatedItems, setAnimatedItems] = useState<number[]>([]);
+  
+  // Load favorites from localStorage on client side
+  useEffect(() => {
+    const storedFavorites = localStorage.getItem('favorites');
+    if (storedFavorites) {
+      setFavorites(JSON.parse(storedFavorites));
+    }
+    
+    // Simulate loading
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 800);
+    
+    return () => clearTimeout(timer);
+  }, []);
+  
+  // Save favorites to localStorage when they change
+  useEffect(() => {
+    localStorage.setItem('favorites', JSON.stringify(favorites));
+  }, [favorites]);
+  
+  // Add staggered animation to tour cards
+  useEffect(() => {
+    if (!isLoading) {
+      const timer = setTimeout(() => {
+        const ids = allTours.map(tour => tour.id);
+        setAnimatedItems(ids);
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [isLoading]);
+  
+  // Toggle favorite status
+  const toggleFavorite = (e: React.MouseEvent, tourId: number) => {
+    e.stopPropagation();
+    setFavorites(prev => 
+      prev.includes(tourId) 
+        ? prev.filter(id => id !== tourId)
+        : [...prev, tourId]
+    );
+  };
   
   // Sample tour data
   const allTours: Tour[] = [
@@ -215,24 +260,96 @@ const ToursPage = () => {
     });
   };
 
+  // Formatting price with comma separator
+  const formatPrice = (price: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(price);
+  };
+
+  // Animated scroll indicator
+  const scrollDown = () => {
+    window.scrollTo({
+      top: window.innerHeight - 80,
+      behavior: 'smooth'
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Page Header */}
-      <div className="relative h-[300px] md:h-[400px] bg-gradient-to-r from-blue-500 to-purple-600">
-        <div className="absolute inset-0 bg-black/30"></div>
-        <div className="absolute inset-0 flex items-center justify-center">
-          <div className="text-center">
-            <h1 className="text-3xl md:text-5xl font-bold text-white mb-4">Explore Our Tours</h1>
-            <p className="text-white/90 text-lg max-w-2xl mx-auto">
-              Discover incredible destinations and experiences tailored for mindful travelers
+    <div className="min-h-screen bg-gray-50 overflow-x-hidden">
+      {/* Hero Section with Parallax Effect */}
+      <div className="relative h-[80vh] overflow-hidden">
+        {/* Background overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-900/70 to-purple-900/70 z-10"></div>
+        
+        {/* Background image with optimized quality */}
+        <div 
+          className="absolute inset-0 bg-cover bg-center"
+          style={{
+            backgroundImage: 'url(/images/santorini.jpg)',
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            filter: 'brightness(1.1) contrast(1.1)',
+            transform: 'scale(1.05)',
+            transition: 'transform 0.5s ease-out',
+          }}
+        ></div>
+        
+        {/* Floating decorative elements */}
+        <div className="absolute inset-0 z-10 overflow-hidden">
+          <div className="absolute top-[20%] left-[5%] w-24 h-24 bg-yellow-300/20 rounded-full blur-xl"></div>
+          <div className="absolute bottom-[30%] right-[10%] w-32 h-32 bg-blue-400/20 rounded-full blur-xl"></div>
+          <div className="absolute top-[50%] right-[20%] w-16 h-16 bg-purple-500/20 rounded-full blur-xl"></div>
+        </div>
+        
+        {/* Content */}
+        <div className="absolute inset-0 flex items-center justify-center z-20">
+          <div className="text-center px-4 max-w-4xl">
+            <div className="mb-3 flex justify-center">
+              <span className="px-4 py-1.5 rounded-full bg-white/10 backdrop-blur-md text-white/90 text-sm font-medium tracking-wider inline-flex items-center">
+                <span className="w-2 h-2 bg-yellow-300 rounded-full mr-2 animate-pulse"></span>
+                MEANINGFUL JOURNEYS
+              </span>
+            </div>
+            <h1 className="text-5xl md:text-7xl font-bold text-white mb-6 animate-fade-in-up leading-tight drop-shadow-md">
+              Explore <span className="text-yellow-300 relative inline-block">
+                Mindful 
+                <svg className="absolute -bottom-2 left-0 w-full" viewBox="0 0 120 8" preserveAspectRatio="none">
+                  <path d="M0,5 Q30,2 60,5 T120,5" stroke="currentColor" strokeWidth="3" fill="none" className="text-yellow-400/60" />
+                </svg>
+              </span> Tours
+            </h1>
+            <p className="text-white/90 text-lg md:text-xl max-w-2xl mx-auto mb-10 animate-fade-in-up animation-delay-200 leading-relaxed">
+              Discover incredible destinations and experiences that nourish your body, mind, and spirit on a journey of self-discovery
             </p>
+            <div className="animate-fade-in-up animation-delay-400 flex flex-col sm:flex-row gap-4 justify-center">
+              <button 
+                onClick={scrollDown}
+                className="bg-white text-blue-800 px-8 py-4 rounded-full font-medium hover:bg-yellow-300 hover:text-blue-900 transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1 flex items-center justify-center"
+              >
+                Explore Tours
+                <ChevronRight className="w-5 h-5 ml-2" />
+              </button>
+              <button className="bg-transparent border-2 border-white/60 text-white px-8 py-4 rounded-full font-medium hover:bg-white/10 transition-all duration-300 backdrop-blur-sm">
+                Popular Destinations
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {/* Scroll indicator */}
+        <div className="absolute bottom-12 left-1/2 transform -translate-x-1/2 cursor-pointer z-20 animate-bounce" onClick={scrollDown}>
+          <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center hover:bg-white/30 transition-colors duration-300">
+            <ChevronRight className="w-6 h-6 text-white transform rotate-90" />
           </div>
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto p-4 py-8">
+      <div className="max-w-7xl mx-auto p-4 py-12">
         {/* Search and filters */}
-        <div className="mb-8">
+        <div className="mb-8 bg-white rounded-2xl shadow-xl p-6 animate-fade-in-up border border-gray-200">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
             {/* Search bar */}
             <div className="md:flex-1">
@@ -240,195 +357,404 @@ const ToursPage = () => {
                 <input
                   type="text"
                   placeholder="Search for tours or destinations..."
-                  className="w-full p-3 pl-10 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full p-4 pl-12 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm transition-all duration-300"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
-                <svg 
-                  className="absolute left-3 top-3.5 w-4 h-4 text-gray-400" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24" 
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                </svg>
+                <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               </div>
             </div>
             
-            {/* Filters */}
-            <div className="flex flex-wrap gap-3">
-              {/* Category filter */}
-              <select 
-                className="p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedCategory}
-                onChange={(e) => setSelectedCategory(e.target.value)}
-                aria-label="Filter tours by category"
+            {/* Filter button (mobile) */}
+            <div className="md:hidden">
+              <button 
+                className="w-full flex items-center justify-center gap-2 p-4 bg-blue-600 text-white rounded-xl"
+                onClick={() => setShowFilters(!showFilters)}
               >
-                <option value="" disabled>Category</option>
-                {categories.map(category => (
-                  <option key={category} value={category}>{category}</option>
-                ))}
-              </select>
+                <Filter className="w-5 h-5" />
+                Filters
+              </button>
+            </div>
+            
+            {/* Filters (desktop) */}
+            <div className="hidden md:flex gap-3">
+              {/* Category filter */}
+              <div className="relative">
+                <select
+                  className="appearance-none bg-white border border-gray-200 p-4 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={selectedCategory}
+                  onChange={(e) => setSelectedCategory(e.target.value)}
+                >
+                  <option value="" disabled>Category</option>
+                  {categories.map(category => (
+                    <option key={category} value={category}>{category}</option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <ChevronRight className="w-5 h-5 text-gray-400 transform rotate-90" />
+                </div>
+              </div>
               
               {/* Duration filter */}
-              <select 
-                className="p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedDuration}
-                onChange={(e) => setSelectedDuration(e.target.value)}
-                aria-label="Filter tours by duration"
-              >
-                <option value="" disabled>Duration</option>
-                {durations.map(duration => (
-                  <option key={duration} value={duration}>{duration}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  className="appearance-none bg-white border border-gray-200 p-4 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={selectedDuration}
+                  onChange={(e) => setSelectedDuration(e.target.value)}
+                >
+                  <option value="" disabled>Duration</option>
+                  {durations.map(duration => (
+                    <option key={duration} value={duration}>{duration}</option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <ChevronRight className="w-5 h-5 text-gray-400 transform rotate-90" />
+                </div>
+              </div>
               
               {/* Price range filter */}
-              <select 
-                className="p-3 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                value={selectedPriceRange}
-                onChange={(e) => setSelectedPriceRange(e.target.value)}
-                aria-label="Filter tours by price range"
-              >
-                <option value="" disabled>Price Range</option>
-                {priceRanges.map(range => (
-                  <option key={range} value={range}>{range}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  className="appearance-none bg-white border border-gray-200 p-4 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={selectedPriceRange}
+                  onChange={(e) => setSelectedPriceRange(e.target.value)}
+                >
+                  <option value="" disabled>Price Range</option>
+                  {priceRanges.map(range => (
+                    <option key={range} value={range}>{range}</option>
+                  ))}
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <ChevronRight className="w-5 h-5 text-gray-400 transform rotate-90" />
+                </div>
+              </div>
+              
+              {/* Sort by */}
+              <div className="relative">
+                <select
+                  className="appearance-none bg-white border border-gray-200 p-4 pl-4 pr-10 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 shadow-sm"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  <option value="recommended">Recommended</option>
+                  <option value="price_low">Price: Low to High</option>
+                  <option value="price_high">Price: High to Low</option>
+                  <option value="rating">Top Rated</option>
+                </select>
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2 pointer-events-none">
+                  <ChevronRight className="w-5 h-5 text-gray-400 transform rotate-90" />
+                </div>
+              </div>
             </div>
           </div>
+          
+          {/* Mobile filters (collapsible) */}
+          {showFilters && (
+            <div className="md:hidden space-y-4 mt-4 p-4 bg-gray-50 rounded-xl animate-fade-in">
+              {/* Category filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(category => (
+                    <button
+                      key={category}
+                      className={`px-3 py-2 rounded-lg text-sm ${
+                        selectedCategory === category
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-gray-200 text-gray-700'
+                      }`}
+                      onClick={() => setSelectedCategory(category)}
+                    >
+                      {category}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Duration filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Duration</label>
+                <div className="flex flex-wrap gap-2">
+                  {durations.map(duration => (
+                    <button
+                      key={duration}
+                      className={`px-3 py-2 rounded-lg text-sm ${
+                        selectedDuration === duration
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-gray-200 text-gray-700'
+                      }`}
+                      onClick={() => setSelectedDuration(duration)}
+                    >
+                      {duration}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Price range filter */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Price Range</label>
+                <div className="flex flex-wrap gap-2">
+                  {priceRanges.map(range => (
+                    <button
+                      key={range}
+                      className={`px-3 py-2 rounded-lg text-sm ${
+                        selectedPriceRange === range
+                          ? 'bg-blue-600 text-white'
+                          : 'bg-white border border-gray-200 text-gray-700'
+                      }`}
+                      onClick={() => setSelectedPriceRange(range)}
+                    >
+                      {range}
+                    </button>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Sort by */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Sort By</label>
+                <select
+                  className="block w-full bg-white border border-gray-200 p-3 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  value={sortBy}
+                  onChange={(e) => setSortBy(e.target.value)}
+                >
+                  <option value="recommended">Recommended</option>
+                  <option value="price_low">Price: Low to High</option>
+                  <option value="price_high">Price: High to Low</option>
+                  <option value="rating">Top Rated</option>
+                </select>
+              </div>
+            </div>
+          )}
         </div>
         
         {/* Results count */}
-        <div className="mb-6 flex justify-between items-center">
-          <p className="text-gray-600">Showing {filteredTours.length} tours</p>
-          
-          {/* Sort by dropdown */}
-          <select 
-            className="p-2 border border-gray-300 rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            aria-label="Sort tours by"
-          >
-            <option value="recommended">Sort by: Recommended</option>
-            <option value="price_low">Price: Low to High</option>
-            <option value="price_high">Price: High to Low</option>
-            <option value="rating">Highest Rated</option>
-          </select>
+        <div className="flex items-center justify-between mb-6">
+          <div className="text-gray-600">
+            Showing <span className="font-medium">{sortedTours.length}</span> {sortedTours.length === 1 ? 'tour' : 'tours'}
+          </div>
         </div>
-
-        {/* Display our featured tour tool if there are filtered results */}
-        {filteredTours.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {sortedTours.map((tour) => (
-              <div 
-                key={tour.id} 
-                className="bg-white rounded-lg overflow-hidden shadow-md cursor-pointer transition-transform hover:-translate-y-1 hover:shadow-lg"
-                onClick={() => handleTourClick(tour.id)}
-              >
-                <div className="relative h-56 w-full">
-                  <Image
-                    src={tour.image}
-                    alt={tour.title}
-                    fill
-                    className="object-cover"
-                  />
-                  <div className="absolute top-4 left-4">
-                    <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                      tour.tag === 'Historical' ? 'bg-amber-100 text-amber-800' : 
-                      tour.tag === 'Cultural' ? 'bg-green-100 text-green-800' : 
-                      tour.tag === 'Temple' ? 'bg-purple-100 text-purple-800' :
-                      tour.tag === 'Nature' ? 'bg-blue-100 text-blue-800' :
-                      tour.tag === 'Beach' ? 'bg-cyan-100 text-cyan-800' :
-                      'bg-orange-100 text-orange-800'
-                    }`}>
-                      {tour.tag}
-                    </span>
-                  </div>
-                </div>
-                
-                <div className="p-5">
-                  <div className="flex items-center mb-3">
-                    <div className="flex items-center text-amber-400">
-                      <span className="mr-1">★</span>
-                      <span className="font-semibold text-sm">{tour.rating.toFixed(2)}</span>
-                    </div>
-                    <span className="text-sm text-gray-500 ml-1">({tour.reviews} reviews)</span>
-                  </div>
-                  
-                  <h3 className="font-bold text-xl mb-2 hover:text-blue-600 transition-colors">
-                    {tour.title}
-                  </h3>
-                  
-                  <p className="text-gray-600 text-sm mb-3">{tour.location}</p>
-                  
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="flex items-center text-sm text-gray-500">
-                      <span className="mr-1">◯</span>
-                      <span>{tour.days} days {tour.nights} nights</span>
-                    </div>
-                    <div className="flex items-center text-sm text-gray-500">
-                      <span className="mr-1">◯</span>
-                      <span>{tour.guests} guest</span>
-                    </div>
-                  </div>
-                  
+        
+        {/* Loading state */}
+        {isLoading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+            {[...Array(6)].map((_, i) => (
+              <div key={i} className="bg-white rounded-2xl shadow-md overflow-hidden">
+                <div className="h-52 bg-gray-200 animate-pulse"></div>
+                <div className="p-5 space-y-3">
+                  <div className="h-5 bg-gray-200 rounded animate-pulse"></div>
+                  <div className="h-4 bg-gray-200 rounded w-4/5 animate-pulse"></div>
                   <div className="flex justify-between items-center">
-                    <div>
-                      <span className="font-bold text-xl">₹{tour.price.toFixed(2)}</span>
-                      <span className="text-gray-500 text-sm"> / person</span>
-                    </div>
-                    <button 
-                      className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-full text-sm font-medium"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        router.push(`/booking/${tour.id}`);
-                      }}
-                    >
-                      Book Now
-                    </button>
+                    <div className="h-6 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+                    <div className="h-10 bg-gray-200 rounded w-1/4 animate-pulse"></div>
                   </div>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="text-center py-12">
-            <svg className="w-16 h-16 text-gray-300 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-            <h3 className="text-xl font-bold text-gray-700 mb-2">No tours found</h3>
-            <p className="text-gray-500">
-              Try adjusting your search or filter criteria to find what you're looking for.
-            </p>
-            <button 
-              className="mt-4 text-blue-600 font-medium"
-              onClick={() => {
-                setSearchQuery('');
-                setSelectedCategory('All');
-                setSelectedDuration('All');
-                setSelectedPriceRange('All');
-              }}
-            >
-              Clear all filters
-            </button>
-          </div>
+          <>
+            {/* Tour cards */}
+            {sortedTours.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {sortedTours.map((tour) => (
+                  <div
+                    key={tour.id}
+                    className={`bg-white rounded-2xl shadow-lg overflow-hidden cursor-pointer transform transition-all duration-500 hover:-translate-y-2 hover:shadow-2xl border border-gray-100 group ${
+                      animatedItems.includes(tour.id) ? 'animate-fade-in-up' : 'opacity-0'
+                    }`}
+                    style={{ animationDelay: `${200 + sortedTours.indexOf(tour) * 100}ms` }}
+                    onClick={() => handleTourClick(tour.id)}
+                  >
+                    {/* Image container */}
+                    <div className="relative h-64 overflow-hidden">
+                      <Image
+                        src={tour.image}
+                        alt={tour.title}
+                        fill
+                        style={{ objectFit: 'cover' }}
+                        className="transition-transform duration-700 group-hover:scale-110 filter saturate-100 group-hover:saturate-125"
+                        priority={sortedTours.indexOf(tour) < 3}
+                      />
+                      
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60"></div>
+                      
+                      {/* Category tag */}
+                      <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-4 py-1.5 rounded-full text-xs font-medium text-blue-800 shadow-sm transform transition-transform group-hover:scale-105">
+                        {tour.tag}
+                      </div>
+                      
+                      {/* Favorite button with animation */}
+                      <button
+                        className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-white/90 backdrop-blur-sm transition-transform hover:scale-110 shadow-sm"
+                        onClick={(e) => toggleFavorite(e, tour.id)}
+                      >
+                        <Heart
+                          className={`w-4 h-4 transition-all duration-300 ${
+                            favorites.includes(tour.id) 
+                              ? 'fill-red-500 text-red-500 scale-110' 
+                              : 'text-gray-600 group-hover:text-red-400'
+                          }`}
+                        />
+                      </button>
+                      
+                      {/* Quick info on image */}
+                      <div className="absolute bottom-4 left-4 flex space-x-2">
+                        <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-medium text-gray-800 flex items-center">
+                          <Sun className="w-3 h-3 text-orange-500 mr-1" />
+                          {tour.days}d
+                        </div>
+                        <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-medium text-gray-800 flex items-center">
+                          <Moon className="w-3 h-3 text-indigo-500 mr-1" />
+                          {tour.nights}n
+                        </div>
+                        <div className="bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-medium text-gray-800 flex items-center">
+                          <Star className="w-3 h-3 text-yellow-400 fill-yellow-400 mr-1" />
+                          {tour.rating}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Content */}
+                    <div className="p-5">
+                      {/* Title with highlight effect on hover */}
+                      <h3 className="font-bold text-lg mb-2 text-gray-800 line-clamp-2 group-hover:text-blue-700 transition-colors duration-300">
+                        {tour.title}
+                      </h3>
+                      
+                      {/* Location with icon animation */}
+                      <div className="flex items-center text-gray-600 mb-4">
+                        <div className="bg-blue-50 rounded-full p-1 mr-2 group-hover:bg-blue-100 transition-colors">
+                          <MapPin className="w-3.5 h-3.5 text-blue-500 group-hover:scale-110 transition-transform" />
+                        </div>
+                        <span className="text-sm font-medium">{tour.location}</span>
+                      </div>
+                      
+                      {/* Capacity with subtle background */}
+                      <div className="bg-gray-50 rounded-lg p-2.5 flex items-center text-sm text-gray-600 mb-4 group-hover:bg-gray-100 transition-colors">
+                        <Users className="w-4 h-4 mr-2 text-blue-500" />
+                        <span className="font-medium">{tour.guests} guests</span>
+                      </div>
+                      
+                      {/* Price and CTA */}
+                      <div className="flex items-center justify-between pt-3 border-t border-gray-100">
+                        <div>
+                          <span className="font-bold text-xl text-blue-700 group-hover:text-blue-800 transition-colors">
+                            {formatPrice(tour.price)}
+                          </span>
+                          <span className="text-gray-500 text-sm ml-1">per person</span>
+                        </div>
+                        <div className="relative overflow-hidden rounded-lg">
+                          <button className="bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white py-2.5 px-5 rounded-lg font-medium flex items-center transform transition-all duration-300 group-hover:shadow-md relative z-10">
+                            View Details
+                            <ChevronRight className="w-4 h-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                          </button>
+                          <div className="absolute inset-0 bg-blue-500 rounded-lg scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-300"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-16 bg-gray-50 rounded-xl">
+                <div className="text-gray-400 mb-4">
+                  <Search className="w-12 h-12 mx-auto" />
+                </div>
+                <h3 className="text-xl font-medium text-gray-700 mb-2">No tours found</h3>
+                <p className="text-gray-500 max-w-md mx-auto">
+                  We couldn't find any tours matching your criteria. Try adjusting your filters or search term.
+                </p>
+                <button
+                  className="mt-6 bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700"
+                  onClick={() => {
+                    setSearchQuery('');
+                    setSelectedCategory('All');
+                    setSelectedDuration('All');
+                    setSelectedPriceRange('All');
+                  }}
+                >
+                  Clear filters
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
-
+      
       {/* Back to top button */}
       {showBackToTop && (
         <button
+          className="fixed bottom-6 right-6 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 z-50 transform transition-transform hover:scale-110"
           onClick={scrollToTop}
-          className="fixed bottom-8 right-8 bg-blue-600 text-white p-3 rounded-full shadow-lg hover:bg-blue-700 transition-all duration-300 z-50"
-          aria-label="Back to top"
         >
-          <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 10l7-7m0 0l7 7m-7-7v18" />
-          </svg>
+          <ArrowUpCircle className="w-6 h-6" />
         </button>
       )}
+      
+      {/* CSS animations */}
+      <style jsx global>{`
+        @keyframes fadeInUp {
+          from {
+            opacity: 0;
+            transform: translateY(20px);
+          }
+          to {
+            opacity: 1;
+            transform: translateY(0);
+          }
+        }
+        
+        @keyframes float {
+          0%, 100% {
+            transform: translateY(0);
+          }
+          50% {
+            transform: translateY(-10px);
+          }
+        }
+        
+        @keyframes pulse {
+          0% {
+            transform: scale(1);
+            opacity: 1;
+          }
+          50% {
+            transform: scale(1.05);
+            opacity: 0.8;
+          }
+          100% {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+        
+        .animate-fade-in-up {
+          animation: fadeInUp 0.6s ease-out forwards;
+        }
+        
+        .animate-float {
+          animation: float 3s ease-in-out infinite;
+        }
+        
+        .animate-pulse-slow {
+          animation: pulse 3s ease-in-out infinite;
+        }
+        
+        .animation-delay-200 {
+          animation-delay: 200ms;
+        }
+        
+        .animation-delay-400 {
+          animation-delay: 400ms;
+        }
+        
+        .animation-delay-600 {
+          animation-delay: 600ms;
+        }
+      `}</style>
     </div>
   );
 };

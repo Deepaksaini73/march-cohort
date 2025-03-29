@@ -18,7 +18,7 @@ export default function SearchForm() {
   const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
   const [showDaysDropdown, setShowDaysDropdown] = useState(false);
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
-  const [locationSearchTerm, setLocationSearchTerm] = useState('');
+  const [locationSearchTerm, setLocationSearchTerm] = useState('Mumbai, India');
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
   
   // Popular destinations suggestions - Indian cities
@@ -138,9 +138,10 @@ export default function SearchForm() {
     };
   }, []);
   
-  // Initialize location suggestions
+  // Initialize location suggestions and search term
   useEffect(() => {
     setLocationSuggestions(popularDestinations);
+    setLocationSearchTerm(location);
   }, []);
 
   const handleSearch = (e: React.MouseEvent) => {
