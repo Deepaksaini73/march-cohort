@@ -15,8 +15,8 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Om Tour | Mindful Travel Experiences",
-  description: "Discover mindful travel experiences with Om Tour. Find inner peace through travel with our curated destinations and experiences.",
+  title: "OmTour | Mindful Travel Experiences",
+  description: "Discover mindful travel experiences with OmTour. Find inner peace through travel with our curated destinations and experiences.",
   keywords: ["travel", "luxury", "booking", "hotels", "tours", "tickets"],
 };
 

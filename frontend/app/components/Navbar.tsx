@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -10,7 +11,16 @@ const Navbar = () => {
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center py-4 px-4">
         <div className="flex items-center">
-          <Link href="/" className="font-bold text-2xl text-blue-600">Om<span className="text-purple-600">Tour</span></Link>
+          <Link href="/" className="flex items-center">
+            <Image 
+              src="/images/logos/omtour-logo.jpg" 
+              alt="OmTour Logo" 
+              width={45} 
+              height={45} 
+              className="mr-2 rounded-full object-cover"
+            />
+            <span className="font-bold text-2xl text-blue-600">Om<span className="text-purple-600">Tour</span></span>
+          </Link>
         </div>
         <nav className="hidden md:flex items-center space-x-6">
           <Link href="/" className="text-gray-600 hover:text-blue-600 transition-colors">Home</Link>
