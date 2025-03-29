@@ -69,9 +69,6 @@ const Navbar = () => {
             <NavItem title="Tours" href="/tours" hasDropdown />
             <NavItem title="Destinations" href="/destinations" hasDropdown />
             <NavItem title="Activities" href="/activities" hasDropdown />
-            <NavItem title="Hotel" href="/hotel" hasDropdown />
-            <NavItem title="Rental" href="/rental" hasDropdown />
-            <NavItem title="Tickets" href="/tickets" hasDropdown />
             <NavItem title="Pages" href="/pages" hasDropdown />
             <NavItem title="Blog" href="/blog" hasDropdown />
             <NavItem title="Contact" href="/contact" />
