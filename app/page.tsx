@@ -2,12 +2,18 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
+<<<<<<< HEAD
 import OurfeaturTool from './OurfeaturTool';
+=======
+>>>>>>> d5bfec77bf21d926ecfff2fa32271ed2b1d5344d
 import Hero from './components/hero/Hero';
 import TourCategories from './components/tours/TourCategories';
 import WhyTravelWithUs from './components/whyus/WhyTravelWithUs';
 import TestimonialSlider from './components/testimonials/TestimonialSlider';
+<<<<<<< HEAD
 import Link from 'next/link';
+=======
+>>>>>>> d5bfec77bf21d926ecfff2fa32271ed2b1d5344d
 
 export default function Home() {
   return (
