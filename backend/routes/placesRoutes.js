@@ -47,4 +47,7 @@ router.get('/travel-tips', placesController.getTravelTips);
 router.get('/popular-destinations', placesController.getPopularDestinations);
 router.get('/tours-by-category', placesController.searchToursByCategory);
 
+// New simplified endpoints
+router.get('/popular-destinations-simple', placesController.getSimplifiedPopularDestinations);
+
 module.exports = router;
