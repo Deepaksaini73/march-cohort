@@ -96,7 +96,6 @@ def fetch_restaurants_from_api(lat, lon, radius=1500):
 
     try:
         response = requests.get(url, params=params)
-        print(response.json())
         if response.status_code == 200:
             data = response.json()
             restaurants = data.get("results", [])
@@ -247,7 +246,8 @@ def extract_hotels_restaurants_attractions(city, place_type, budget, num_days):
     result = {
         "weather": [],
         "hotels": [],
-        "restaurants": []
+        "restaurants": [],
+        "attractions": []
     }
 
     if city_data.empty:
@@ -264,13 +264,25 @@ def extract_hotels_restaurants_attractions(city, place_type, budget, num_days):
     weather_data = fetch_weather_forecast(city, date_str)
     result["weather"] = weather_data
 
+    # Process each attraction
+    day_counter = 1
     for _, row in city_data.iterrows():
         attraction_name = row['Name']
         entrance_fee = row['Entrance Fee in INR']
         lat, lon = float(row['Latitude']), float(row['Longitude'])
+        rating = float(row.get('Rating', 4.0))  # Default to 4.0 if no rating
 
         print(f"\nAttraction: {attraction_name}")
         print(f"Entrance Fee: {entrance_fee} INR")
+
+        # Add attraction to result
+        result["attractions"].append({
+            "name": attraction_name,
+            "rating": rating,
+            "entranceFee": entrance_fee,
+            "day": day_counter
+        })
+        day_counter = (day_counter % num_days) + 1
 
         # Fetch and display real-time hotels near the attraction using API
         hotels = process_and_display_hotels_from_api(attraction_name, lat, lon, entrance_fee, num_days, budget)
@@ -279,9 +291,6 @@ def extract_hotels_restaurants_attractions(city, place_type, budget, num_days):
         # Fetch and display real-time restaurants near the attraction
         restaurants = process_and_display_restaurants_from_api(attraction_name, lat, lon)
         result["restaurants"].extend(restaurants)
-        
-        # Only process the first attraction for quicker results
-        break
 
     return result
 
@@ -354,26 +363,25 @@ def process_search_form_data(city, location, days, guests=2, budget="₹15,000",
     print(f"Processing search form data: City={city}, Days={days}, Guests={guests}, Budget={budget}")
     
     # Parse budget string to get maximum budget
-    budget_max = 15000  # Default
-    if budget:
-        # Extract the max value from range like "₹7,500-₹15,000"
-        budget_parts = budget.split('-')
-        if len(budget_parts) > 1:
-            # Get the second part (max value) and remove currency symbol and commas
-            budget_str = budget_parts[1].replace('₹', '').replace(',', '')
-            budget_max = float(budget_str)
-        else:
-            # Handle single value like "₹37,500+"
-            budget_str = budget_parts[0].replace('₹', '').replace(',', '').replace('+', '')
-            budget_max = float(budget_str)
+    try:
+        # Remove currency symbol and commas, then convert to float
+        budget_str = budget.replace('₹', '').replace(',', '').replace('+', '')
+        budget_max = float(budget_str)
+        print(f"Parsed budget: {budget_max}")
+    except (ValueError, AttributeError) as e:
+        print(f"Error parsing budget ({budget}): {str(e)}. Using default.")
+        budget_max = 15000  # Default budget
     
     try:
         # Get results using the existing functions
         result = extract_hotels_restaurants_attractions(city, attraction_type, budget_max, days)
         
-        # If we don't have enough hotels, try to get more with the trip generator
-        if len(result["hotels"]) < 3:
+        print(f"Initial results - Hotels: {len(result['hotels'])}, Weather: {len(result['weather'])}, Attractions: {len(result.get('attractions', []))}")
+        
+        # If we don't have enough hotels or attractions, try to get more with the trip generator
+        if len(result["hotels"]) < 3 or len(result.get("attractions", [])) < days:
             try:
+                print("Not enough hotels/attractions found, trying trip generator...")
                 trip_result = ai_trip_generator(city, attraction_type, budget_max, days)
                 
                 # Merge unique hotels and weather data
@@ -389,88 +397,84 @@ def process_search_form_data(city, location, days, guests=2, budget="₹15,000",
                     if weather["datetime"] not in existing_datetimes:
                         result["weather"].append(weather)
                         existing_datetimes.append(weather["datetime"])
+                
+                # Add unique attractions
+                if "attractions" not in result:
+                    result["attractions"] = []
+                existing_attraction_names = [a["name"] for a in result["attractions"]]
+                for attraction in trip_result.get("attractions", []):
+                    if attraction["name"] not in existing_attraction_names:
+                        result["attractions"].append(attraction)
+                        existing_attraction_names.append(attraction["name"])
+                
+                print(f"Final results - Hotels: {len(result['hotels'])}, Weather: {len(result['weather'])}, Attractions: {len(result['attractions'])}")
             except Exception as e:
                 print(f"Error in trip generator: {str(e)}. Continuing with existing data.")
-    except Exception as e:
-        print(f"Error getting data: {str(e)}. Falling back to sample data.")
-        # Provide sample data if all else fails
-        result = {
-            "weather": [
-                {
-                    "datetime": f"{datetime.now().strftime('%Y-%m-%d')} 12:00:00",
-                    "temperature": 28.5,
-                    "description": "Partly cloudy",
-                    "humidity": 65
-                },
-                {
-                    "datetime": f"{(datetime.now() + timedelta(days=1)).strftime('%Y-%m-%d')} 12:00:00",
-                    "temperature": 29.3,
-                    "description": "Sunny",
-                    "humidity": 60
-                }
-            ],
-            "hotels": [
-                {
-                    "name": f"Sample Hotel in {city}",
-                    "rating": 4.2,
-                    "pricePerNight": 5000.0,
-                    "totalCost": 5000.0 * days
-                },
-                {
-                    "name": f"Budget Stay {city}",
-                    "rating": 3.8,
-                    "pricePerNight": 3000.0,
-                    "totalCost": 3000.0 * days
-                }
-            ],
-            "restaurants": [
-                {
-                    "name": f"Local Cuisine {city}",
-                    "cuisine": "Local",
-                    "rating": 4.5,
-                    "price": "Mid-range"
-                },
-                {
-                    "name": f"Fine Dining {city}",
-                    "cuisine": "International",
-                    "rating": 4.7,
-                    "price": "Fine dining"
-                }
-            ]
-        }
-    
-    # Ensure weather and hotels exist
-    if "weather" not in result or not result["weather"]:
-        result["weather"] = [
-            {
+        
+        # Ensure we have at least some data
+        if not result["weather"]:
+            result["weather"] = [{
                 "datetime": f"{datetime.now().strftime('%Y-%m-%d')} 12:00:00",
                 "temperature": 28.5,
                 "description": "Partly cloudy",
                 "humidity": 65
-            }
-        ]
-    
-    if "hotels" not in result or not result["hotels"]:
-        result["hotels"] = [
-            {
+            }]
+        
+        if not result["hotels"]:
+            result["hotels"] = [{
                 "name": f"Sample Hotel in {city}",
                 "rating": 4.2,
                 "pricePerNight": 5000.0,
                 "totalCost": 5000.0 * days
-            }
-        ]
-    
-    if "restaurants" not in result or not result["restaurants"]:
-        result["restaurants"] = [
-            {
+            }]
+        
+        if not result["restaurants"]:
+            result["restaurants"] = [{
                 "name": f"Local Cuisine {city}",
                 "cuisine": "Local",
                 "rating": 4.5,
                 "price": "Mid-range"
-            }
-        ]
-    
-    return result
+            }]
+        
+        if not result.get("attractions"):
+            result["attractions"] = [{
+                "name": f"Popular Attraction in {city}",
+                "rating": 4.3,
+                "entranceFee": 500.0,
+                "day": 1
+            }]
+        
+        return result
+        
+    except Exception as e:
+        print(f"Error getting data: {str(e)}. Falling back to sample data.")
+        # Provide sample data if all else fails
+        return {
+            "weather": [{
+                "datetime": f"{datetime.now().strftime('%Y-%m-%d')} 12:00:00",
+                "temperature": 28.5,
+                "description": "Partly cloudy",
+                "humidity": 65
+            }],
+            "hotels": [{
+                "name": f"Sample Hotel in {city}",
+                "rating": 4.2,
+                "pricePerNight": 5000.0,
+                "totalCost": 5000.0 * days
+            }],
+            "restaurants": [{
+                "name": f"Local Cuisine {city}",
+                "cuisine": "Local",
+                "rating": 4.5,
+                "price": "Mid-range"
+            }],
+            "attractions": [{
+                "name": f"Popular Attraction in {city}",
+                "rating": 4.3,
+                "entranceFee": 500.0,
+                "day": 1
+            }]
+        }
 
 # If the script is run directly (not imported), display interactive prompt
 if __name__ == "__main__":
@@ -493,4 +497,5 @@ if __name__ == "__main__":
     print("\nResults summary:")
     print(f"- Weather forecasts: {len(result['weather'])} entries")
     print(f"- Hotels found: {len(result['hotels'])}")
-    print(f"- Restaurants found: {len(result['restaurants'])}") 
+    print(f"- Restaurants found: {len(result['restaurants'])}")
+    print(f"- Attractions found: {len(result['attractions'])}") 

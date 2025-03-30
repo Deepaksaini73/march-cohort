@@ -6,6 +6,8 @@ import sys
 import os
 import traceback
 from datetime import datetime, timedelta
+import logging
+import json
 
 # Add parent directory to path to import main.py
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -20,12 +22,16 @@ from main import (
     fetch_restaurants_from_api
 )
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 app = FastAPI()
 
-# Configure CORS to allow requests from frontend
+# Configure CORS - Allow requests from frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # For production, set to your frontend domain
+    allow_origins=["http://localhost:3000", "http://localhost:3001"],  # Frontend URLs
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -35,11 +41,11 @@ class TripRequest(BaseModel):
     city: str
     location: str
     days: int
-    guests: Optional[int] = None
-    budget: Optional[str] = None
+    guests: int = 2
+    budget: str
     transport: Optional[str] = None
     purpose: Optional[str] = None
-    attraction_type: Optional[str] = "Monument"
+    attraction_type: str = "Monument"
     
 class TripResponse(BaseModel):
     weather: List[dict]
@@ -48,43 +54,68 @@ class TripResponse(BaseModel):
     attractions: Optional[List[dict]] = None
 
 @app.get("/")
-def read_root():
-    return {"message": "Travel Planning API is running"}
+async def health_check():
+    """Health check endpoint to verify the API is running"""
+    return {"status": "ok", "message": "API is running"}
 
-@app.post("/api/trip", response_model=TripResponse)
+@app.post("/api/trip")
 async def generate_trip(request: TripRequest):
+    """
+    Generate a trip plan based on user input.
+    This endpoint processes the search form data and returns weather, hotels, restaurants, and attractions.
+    """
+    logger.info(f"Received trip request for {request.city} for {request.days} days with budget {request.budget}")
+    
     try:
-        # Extract city from location (assumes format 'City, Country')
-        city = request.location.split(',')[0].strip()
-        
-        # Log the request
-        print(f"Processing trip request: {city}, {request.days} days, Budget: {request.budget}")
-        
-        # Directly call the process_search_form_data function from main.py
+        # Process the search form data using the main.py function
         result = process_search_form_data(
-            city=city,
+            city=request.city,
             location=request.location,
             days=request.days,
-            guests=request.guests or 2,
-            budget=request.budget or "₹15,000",
-            attraction_type=request.attraction_type or "Monument"
+            guests=request.guests,
+            budget=request.budget,
+            attraction_type=request.attraction_type
         )
         
-        # Verify the result has required fields
-        if "weather" not in result or "hotels" not in result:
-            raise ValueError("Result missing required fields (weather or hotels)")
+        logger.info(f"Generated trip plan with {len(result.get('weather', []))} weather entries, "
+                   f"{len(result.get('hotels', []))} hotels, and "
+                   f"{len(result.get('restaurants', []))} restaurants")
         
-        # Return the response
+        # Ensure the result has all required fields
+        if not result.get('weather'):
+            logger.warning("No weather data in result, adding default")
+            result['weather'] = [{
+                'datetime': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'temperature': 28,
+                'description': 'Sunny',
+                'humidity': 65
+            }]
+            
+        if not result.get('hotels'):
+            logger.warning("No hotel data in result, adding default")
+            result['hotels'] = [{
+                'name': f'Sample Hotel in {request.city}',
+                'rating': 4.0,
+                'pricePerNight': 5000.0,
+                'totalCost': 5000.0 * request.days
+            }]
+            
+        if not result.get('restaurants'):
+            logger.warning("No restaurant data in result, adding default")
+            result['restaurants'] = [{
+                'name': f'Local Restaurant in {request.city}',
+                'cuisine': 'Local',
+                'rating': 4.0,
+                'price': 'Mid-range'
+            }]
+            
         return result
         
     except Exception as e:
-        # Get the full stack trace
-        error_details = traceback.format_exc()
-        print(f"Error in /api/trip: {str(e)}\n{error_details}")
-        
-        # Return a user-friendly error
+        logger.error(f"Error processing trip request: {str(e)}")
+        logger.exception("Full error traceback:")
         raise HTTPException(
-            status_code=500, 
+            status_code=500,
             detail=f"Error generating trip plan: {str(e)}"
         )
 

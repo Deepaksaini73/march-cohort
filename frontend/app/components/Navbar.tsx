@@ -3,15 +3,20 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { AlignRight, X } from 'lucide-react';
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
+
+  const closeMenu = () => {
+    setIsOpen(false);
+  };
 
   return (
     <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="container mx-auto flex justify-between items-center py-4 px-4">
         <div className="flex items-center">
-          <Link href="/" className="flex items-center">
+          <Link href="/" className="flex items-center" onClick={closeMenu}>
             <Image 
               src="/images/logos/omtour-logo.jpg" 
               alt="OmTour Logo" 
@@ -36,28 +41,80 @@ const Navbar = () => {
           {/* Mobile Menu Button */}
           <button 
             onClick={() => setIsOpen(!isOpen)} 
-            className="md:hidden p-2"
+            className="block md:hidden p-2 text-gray-600 hover:text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg"
             aria-label="Toggle mobile menu"
           >
-            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16m-7 6h7" />
-            </svg>
+            {isOpen ? <X size={24} /> : <AlignRight size={24} />}
           </button>
         </div>
       </div>
       
       {/* Mobile Menu */}
-      {isOpen && (
-        <div className="md:hidden absolute top-16 inset-x-0 bg-white shadow-lg z-50 py-4 border-b">
-          <div className="px-4 space-y-2">
-            <Link href="/" className="block py-2 text-sm font-medium text-gray-700">Home</Link>
-            <Link href="/tours" className="block py-2 text-sm font-medium text-gray-700">Tours</Link>
-            <Link href="/about" className="block py-2 text-sm font-medium text-gray-700">About</Link>
-            <Link href="/faq" className="block py-2 text-sm font-medium text-gray-700">FAQ</Link>
-            <Link href="/contact" className="block py-2 text-sm font-medium text-gray-700">Contact</Link>
+      <div 
+        className={`
+          md:hidden fixed inset-0 z-40 transform transition-transform duration-300 ease-in-out
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+      >
+        {/* Backdrop */}
+        <div 
+          className={`
+            absolute inset-0 bg-black bg-opacity-50 transition-opacity duration-300
+            ${isOpen ? 'opacity-100' : 'opacity-0'}
+          `}
+          onClick={closeMenu}
+        />
+        
+        {/* Menu Content */}
+        <div className="relative w-4/5 max-w-sm bg-white h-full shadow-xl overflow-y-auto">
+          <div className="px-4 py-6 space-y-4">
+            <Link 
+              href="/" 
+              className="block py-3 px-4 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+              onClick={closeMenu}
+            >
+              Home
+            </Link>
+            <Link 
+              href="/tours" 
+              className="block py-3 px-4 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+              onClick={closeMenu}
+            >
+              Tours
+            </Link>
+            <Link 
+              href="/about" 
+              className="block py-3 px-4 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+              onClick={closeMenu}
+            >
+              About
+            </Link>
+            <Link 
+              href="/faq" 
+              className="block py-3 px-4 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+              onClick={closeMenu}
+            >
+              FAQ
+            </Link>
+            <Link 
+              href="/contact" 
+              className="block py-3 px-4 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors"
+              onClick={closeMenu}
+            >
+              Contact
+            </Link>
+            
+            <div className="pt-4 border-t border-gray-200">
+              <button className="w-full py-3 px-4 text-base font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-600 rounded-lg transition-colors">
+                Sign In
+              </button>
+              <button className="w-full mt-2 py-3 px-4 text-base font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-lg transition-colors">
+                Book Now
+              </button>
+            </div>
           </div>
         </div>
-      )}
+      </div>
     </header>
   );
 };
