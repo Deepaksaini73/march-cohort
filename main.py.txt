@@ -1,0 +1,292 @@
+import pandas as pd
+import re
+import requests
+from datetime import datetime, timedelta
+
+# Load the dataset
+df = pd.read_csv('travel_dataset.csv')
+
+# Define hotel price brackets based on rating
+def fetch_weather_forecast(city, date):
+    """Fetch weather forecast for a given city and date (up to 5 days) using the free forecast API."""
+    api_key = "ac35a954227d238abfc011ab55e54d29"  # Replace with your OpenWeatherMap API key
+
+    url = f"https://api.openweathermap.org/data/2.5/forecast?q={city}&appid={api_key}&units=metric"
+    response = requests.get(url)
+
+    if response.status_code == 200:
+        forecast_data = response.json()
+
+        print(f"\nWeather forecast for {city} on {date}:")
+        found_forecast = False
+
+        for forecast in forecast_data['list']:
+            forecast_date = datetime.fromtimestamp(forecast['dt']).strftime("%Y-%m-%d %H:%M:%S")
+            if forecast_date.startswith(date):
+                temp = forecast['main']['temp']
+                description = forecast['weather'][0]['description']
+                humidity = forecast['main']['humidity']
+                print(f"{forecast_date} - Temperature: {temp}°C, Description: {description.capitalize()}, Humidity: {humidity}%")
+                found_forecast = True
+
+        if not found_forecast:
+            print(f"No forecast available for {date}.")
+    else:
+        print(f"Failed to fetch forecast data. Error: {response.json()}")
+
+def fetch_hotels_from_api(lat, lon, checkin_date, checkout_date, radius=5, adults=2):
+    """Fetch real-time hotel data near the specified coordinates using Booking.com API."""
+    url = "https://booking-com.p.rapidapi.com/v1/hotels/search-by-coordinates"
+    headers = {
+        "X-RapidAPI-Key": "4749807104msh2c14424ddf82848p15f537jsn15995971e8db",  # Replace with your API key
+        "X-RapidAPI-Host": "booking-com.p.rapidapi.com",
+    }
+    params = {
+        "latitude": lat,
+        "longitude": lon,
+        "checkin_date": checkin_date,
+        "checkout_date": checkout_date,
+        "adults_number": adults,
+        "locale": "en-us",
+        "filter_by_currency": "INR",
+        "order_by": "distance",
+        "room_number": 1,
+        "units": "metric",
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+    if response.status_code == 200:
+        hotels = response.json().get("result", [])
+        return hotels
+    else:
+        print(f"Failed to fetch hotels. Status Code: {response.status_code}")
+        return []
+
+def fetch_restaurants_from_api(lat, lon, radius=1500):
+    """Fetch restaurant data using Google Places API."""
+    # You'll need to get an API key from Google Cloud Platform
+    # 1. Create a Google Cloud account: https://cloud.google.com/
+    # 2. Enable the Places API
+    # 3. Create an API key with restrictions for security
+
+    api_key = "AIzaSyB4Pk-oT_sJ7u2XmcDmSeFcTLM08Ukkpv0"  # Replace with your Google API key
+    url = f"https://maps.googleapis.com/maps/api/place/nearbysearch/json"
+
+    params = {
+        "location": f"{lat},{lon}",
+        "radius": radius,
+        "type": "restaurant",
+        "key": api_key
+    }
+
+    try:
+        response = requests.get(url, params=params)
+        print(response.json())
+        if response.status_code == 200:
+            data = response.json()
+            restaurants = data.get("results", [])
+            return restaurants
+        else:
+            print(f"Failed to fetch restaurants. Status Code: {response.status_code}")
+            return []
+    except Exception as e:
+        print(f"Error in API request: {str(e)}")
+        return []
+
+def process_and_display_restaurants_from_api(attraction_name, lat, lon):
+    """Fetch restaurants from the API and display top rated options."""
+    print(f"\nRestaurants near {attraction_name}:")
+
+    restaurants = fetch_restaurants_from_api(lat, lon)
+
+    if restaurants:
+        valid_restaurants = []
+        for restaurant in restaurants:
+            name = restaurant.get("name", "Unknown Restaurant")
+
+            # Google Places returns types for categorization
+            types = restaurant.get("types", [])
+            cuisine = "Restaurant"
+            if "restaurant" in types:
+                # Extract other meaningful types for cuisine info
+                cuisine_types = [t.replace("_", " ").title() for t in types
+                              if t not in ["restaurant", "food", "point_of_interest", "establishment"]]
+                if cuisine_types:
+                    cuisine = ", ".join(cuisine_types)
+
+            # Google uses a numeric rating system out of 5
+            rating = restaurant.get("rating", "No rating")
+
+            # Price level is 0 (Free) to 4 (Very Expensive)
+            price_level = restaurant.get("price_level", -1)
+
+            if price_level == 0 or price_level == 1:
+                price_description = "Budget-friendly"
+            elif price_level == 2:
+                price_description = "Mid-range"
+            elif price_level >= 3:
+                price_description = "Fine dining"
+            else:
+                price_description = "Unknown price range"
+
+            valid_restaurants.append((name, cuisine, rating, price_description))
+
+        # Sort by rating (highest first)
+        sorted_restaurants = sorted(valid_restaurants,
+                                   key=lambda x: float(x[2]) if isinstance(x[2], (int, float)) or
+                                   (isinstance(x[2], str) and x[2] != "No rating" and x[2].replace('.', '', 1).isdigit())
+                                   else 0,
+                                   reverse=True)
+
+        if sorted_restaurants:
+            for restaurant in sorted_restaurants[:5]:  # Show top 5
+                print(f"Restaurant: {restaurant[0]} | Cuisine: {restaurant[1]} | Rating: {restaurant[2]} | Price: {restaurant[3]}")
+        else:
+            print("No restaurants found in this area.")
+    else:
+        print("No restaurants found from the API.")
+
+def process_and_display_hotels_from_api(attraction_name, lat, lon, entrance_fee, num_days, budget):
+    """Fetch hotels from the API and display based on user budget and preferences."""
+    print(f"\nHotels near {attraction_name}:")
+
+    hotels = fetch_hotels_from_api(lat, lon, checkin_date="2025-04-05", checkout_date="2025-04-10")
+
+    if hotels:
+        hotel_costs = []
+        skipped_count = 0
+        for hotel in hotels:
+            try:
+                hotel_name = hotel['hotel_name']
+
+                # Handle different price structures that might exist in the API response
+                if 'price_breakdown' in hotel and 'gross_price' in hotel['price_breakdown']:
+                    price_per_night = hotel['price_breakdown']['gross_price']
+                elif 'min_total_price' in hotel:
+                    price_per_night = hotel['min_total_price']
+                else:
+                    # Skip this hotel if no price info found
+                    skipped_count += 1
+                    continue
+
+                # Ensure rating is always a number (0.0 if missing)
+                rating = float(hotel.get('review_score', 0) or 0)
+
+                # Ensure price is numeric before calculation
+                try:
+                    price_per_night_num = float(price_per_night)
+                    total_cost = entrance_fee + (num_days * price_per_night_num)  # Use float instead of int
+                    hotel_costs.append((hotel_name, rating, price_per_night, total_cost))
+                except (ValueError, TypeError):
+                    skipped_count += 1
+                    continue
+
+            except (KeyError, ValueError):
+                skipped_count += 1
+                continue
+
+        # Report total skipped hotels instead of individual messages
+        if skipped_count > 0:
+            print(f"Skipped {skipped_count} hotels due to missing or invalid price information.")
+
+        # Filter hotels within budget and sort by rating
+        affordable_hotels = [hotel for hotel in hotel_costs if hotel[3] <= budget]
+
+        # Filter out any possible None values before sorting
+        affordable_hotels = [hotel for hotel in affordable_hotels if hotel[1] is not None]
+
+        # Now sort the filtered list
+        affordable_hotels = sorted(affordable_hotels, key=lambda x: x[1], reverse=True)  # Sort by rating
+
+        if affordable_hotels:
+            for hotel in affordable_hotels:
+                print(f"Hotel: {hotel[0]} | Rating: {hotel[1]} | Price per Night: {hotel[2]} INR | "
+                      f"Total Cost: {hotel[3]} INR")
+        else:
+            print("No hotels found within your budget.")
+    else:
+        print("No hotels found from the API.")
+
+def extract_hotels_restaurants_attractions(city, place_type, budget, num_days):
+    """Extract attractions, calculate hotel costs, and display nearby restaurants and attractions based on input city, type, budget, and stay duration."""
+    city_data = df[(df['City'].str.contains(city, case=False)) & (df['Type'].str.contains(place_type, case=False))]
+
+    if city_data.empty:
+        print(f"No attractions of type '{place_type}' found in {city}.")
+        return
+
+    print(f"\nExploring attractions in {city} of type '{place_type}':")
+
+    for _, row in city_data.iterrows():
+        attraction_name = row['Name']
+        entrance_fee = row['Entrance Fee in INR']
+        lat, lon = float(row['Latitude']), float(row['Longitude'])
+
+        print(f"\nAttraction: {attraction_name}")
+        print(f"Entrance Fee: {entrance_fee} INR")
+
+        # Fetch and display real-time hotels near the attraction using API
+        process_and_display_hotels_from_api(attraction_name, lat, lon, entrance_fee, num_days, budget)
+
+        # Fetch and display real-time restaurants near the attraction
+        process_and_display_restaurants_from_api(attraction_name, lat, lon)
+
+def ai_trip_generator(city, attraction_type, budget, num_days):
+    """Generate an AI-based trip itinerary for the specified city, type, budget, and number of days."""
+    print(f"\nAI Trip Plan for {city} - {num_days} day(s)")
+
+    # Filter attractions based on city and type
+    city_data = df[(df['City'].str.contains(city, case=False)) & (df['Type'].str.contains(attraction_type, case=False))]
+
+    if city_data.empty:
+        print(f"No attractions of type '{attraction_type}' found in {city}.")
+        return
+
+    # Rank attractions based on rating, entrance fee, and popularity
+    ranked_attractions = city_data.sort_values(by=['Number of google review in lakhs', 'Entrance Fee in INR'], ascending=[False, True])
+    selected_attractions = ranked_attractions.head(num_days * 2)  # Select top attractions based on days
+
+    daily_plan = {}
+    current_date = datetime.now()
+
+    # Distribute attractions into daily slots and consider travel distance & time at each attraction
+    for day in range(1, num_days + 1):
+        print(f"\nDay {day} Plan:")
+        current_attractions = selected_attractions.iloc[(day - 1) * 2 : day * 2]
+
+        # Morning and afternoon attractions
+        for i, row in current_attractions.iterrows():
+            attraction_name = row['Name']
+            lat, lon = float(row['Latitude']), float(row['Longitude'])
+            entrance_fee = row['Entrance Fee in INR']
+            rating = row['Number of google review in lakhs']
+
+            print(f"\nAttraction: {attraction_name} | Rating: {rating}")
+            print(f"Entrance Fee: {entrance_fee} INR")
+
+            # Fetch weather forecast for the day and time
+            date_str = (current_date + timedelta(days=day + 1)).strftime("%Y-%m-%d")
+            fetch_weather_forecast(city, date_str)
+
+            # Fetch and display real-time hotel recommendations near the attraction
+            process_and_display_hotels_from_api(attraction_name, lat, lon, entrance_fee, num_days, budget)
+
+            # Fetch and display nearby restaurants
+            process_and_display_restaurants_from_api(attraction_name, lat, lon)
+
+    print("\nEnjoy your trip! Your AI-based itinerary is ready!")
+
+
+# User inputs
+city_input = input("Enter the city to Explore: ")
+date_input = input("Enter the date (YYYY-MM-DD) for the weather forecast: ")
+
+# Fetch and display weather forecast
+
+type_input = input("Enter the type of attraction (e.g., Monument, Fort, Museum): ")
+budget_input = int(input("Enter your total budget in INR: "))
+num_days_input = int(input("Enter the number of days you plan to stay: "))
+
+# Call the function with user inputs
+
+ai_trip_generator(city_input, type_input, budget_input, num_days_input)

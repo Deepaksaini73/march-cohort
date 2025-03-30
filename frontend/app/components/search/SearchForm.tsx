@@ -1,23 +1,41 @@
 "use client";
 import { useState, useEffect, useRef } from 'react';
-import { Search, MapPin, User, Calendar, Info, DollarSign, Car, Briefcase, Sparkles, ChevronDown, Loader2 } from 'lucide-react';
+import { Search, MapPin, User, Calendar, Info, DollarSign, Car, Briefcase, Sparkles, ChevronDown, Loader2, CalendarDays } from 'lucide-react';
 import Link from 'next/link';
 import SearchResults from './SearchResults';
 
+// Add types for the response data
+interface Hotel {
+  name: string;
+  rating: number | string;
+  pricePerNight: number | string;
+  totalCost: number | string;
+  image?: string;
+}
+
+interface Restaurant {
+  name: string;
+  cuisine: string;
+  rating: number | string;
+  price: string;
+  image?: string;
+}
+
 export default function SearchForm() {
-  const [activeTab, setActiveTab] = useState('Tours');
+  const [activeTab, setActiveTab] = useState('All');
   const [location, setLocation] = useState('Mumbai, India');
-  const [guests, setGuests] = useState(4);
   const [days, setDays] = useState(3);
-  const [budget, setBudget] = useState('₹7,500-₹15,000');
+  const [budget, setBudget] = useState('₹15,000');
   const [transport, setTransport] = useState('Car');
   const [purpose, setPurpose] = useState('Fun');
+  const [startDate, setStartDate] = useState<string>(new Date().toISOString().split('T')[0]);
+  const [showDatePicker, setShowDatePicker] = useState(false);
   const [isFormFocused, setIsFormFocused] = useState(false);
   const [searchData, setSearchData] = useState('');
   const [showSearchData, setShowSearchData] = useState(false);
   const [showLocationDropdown, setShowLocationDropdown] = useState(false);
-  const [showGuestsDropdown, setShowGuestsDropdown] = useState(false);
   const [showDaysDropdown, setShowDaysDropdown] = useState(false);
+  const [showPurposeDropdown, setShowPurposeDropdown] = useState(false);
   const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
   const [locationSearchTerm, setLocationSearchTerm] = useState('Mumbai, India');
   const [isLoadingLocations, setIsLoadingLocations] = useState(false);
@@ -35,7 +53,21 @@ export default function SearchForm() {
       pricePerNight: number;
       totalCost: number;
     }>;
+    restaurants?: Array<{
+      name: string;
+      cuisine: string;
+      rating: number | string;
+      price: string;
+    }>;
+    attractions?: Array<{
+      name: string;
+      rating: number;
+      entranceFee: number;
+      day: number;
+    }>;
+    error?: string;
   } | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
   
   // Popular destinations suggestions - Indian cities
   const popularDestinations = [
@@ -63,8 +95,9 @@ export default function SearchForm() {
   
   // Reference for outside clicks
   const locationDropdownRef = useRef<HTMLDivElement>(null);
-  const guestsDropdownRef = useRef<HTMLDivElement>(null);
   const daysDropdownRef = useRef<HTMLDivElement>(null);
+  const purposeDropdownRef = useRef<HTMLDivElement>(null);
+  const datePickerRef = useRef<HTMLDivElement>(null);
   
   // Fetch location suggestions from API
   const fetchLocationSuggestions = async (searchTerm: string) => {
@@ -127,11 +160,6 @@ export default function SearchForm() {
     setLocationSearchTerm(selected);
     setShowLocationDropdown(false);
   };
-  
-  const handleGuestSelect = (count: number) => {
-    setGuests(count);
-    setShowGuestsDropdown(false);
-  };
 
   // Handle clicks outside dropdowns
   useEffect(() => {
@@ -139,11 +167,14 @@ export default function SearchForm() {
       if (locationDropdownRef.current && !locationDropdownRef.current.contains(event.target as Node)) {
         setShowLocationDropdown(false);
       }
-      if (guestsDropdownRef.current && !guestsDropdownRef.current.contains(event.target as Node)) {
-        setShowGuestsDropdown(false);
-      }
       if (daysDropdownRef.current && !daysDropdownRef.current.contains(event.target as Node)) {
         setShowDaysDropdown(false);
+      }
+      if (purposeDropdownRef.current && !purposeDropdownRef.current.contains(event.target as Node)) {
+        setShowPurposeDropdown(false);
+      }
+      if (datePickerRef.current && !datePickerRef.current.contains(event.target as Node)) {
+        setShowDatePicker(false);
       }
       setIsFormFocused(false);
     };
@@ -160,120 +191,266 @@ export default function SearchForm() {
     setLocationSearchTerm(location);
   }, []);
 
+  // Debug logs
+  useEffect(() => {
+    console.log("showResults:", showResults, "searchResults:", searchResults, "isLoading:", isLoading);
+  }, [showResults, searchResults, isLoading]);
+
+  // Add helper functions for date picker
+  const formatDisplayDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { 
+      weekday: 'short',
+      month: 'short', 
+      day: 'numeric',
+      year: 'numeric'
+    });
+  };
+  
+  const handleDateChange = (newDate: string) => {
+    setStartDate(newDate);
+    setShowDatePicker(false);
+  };
+  
+  const generateCalendarDays = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const days = [];
+    const currentMonth = new Date(today);
+    
+    // Generate dates for the next 90 days
+    for (let i = 0; i < 90; i++) {
+      const date = new Date(today);
+      date.setDate(today.getDate() + i);
+      days.push(date);
+    }
+    
+    return days;
+  };
+
   const handleSearch = async (e: React.MouseEvent) => {
     e.preventDefault();
     
-    // Simulate API call to your ML model
-    // In a real implementation, this would be an actual API call
-    const mockApiResponse = {
-      weather: [
-        {
-          datetime: "2025-04-01 02:30:00",
-          temperature: 23.79,
-          description: "Clear sky",
-          humidity: 9
-        },
-        {
-          datetime: "2025-04-01 05:30:00",
-          temperature: 22.55,
-          description: "Clear sky",
-          humidity: 9
-        },
-        {
-          datetime: "2025-04-01 08:30:00",
-          temperature: 28.51,
-          description: "Clear sky",
-          humidity: 6
-        },
-        {
-          datetime: "2025-04-01 11:30:00",
-          temperature: 36.85,
-          description: "Clear sky",
-          humidity: 4
-        },
-        {
-          datetime: "2025-04-01 14:30:00",
-          temperature: 39.39,
-          description: "Clear sky",
-          humidity: 3
-        },
-        {
-          datetime: "2025-04-01 17:30:00",
-          temperature: 37.6,
-          description: "Clear sky",
-          humidity: 4
-        },
-        {
-          datetime: "2025-04-01 20:30:00",
-          temperature: 30.08,
-          description: "Clear sky",
-          humidity: 5
-        },
-        {
-          datetime: "2025-04-01 23:30:00",
-          temperature: 26.72,
-          description: "Clear sky",
-          humidity: 7
+    try {
+      // Show loading state
+      setShowResults(true);
+      setSearchResults(null); // Clear previous results
+      setIsLoading(true);
+      
+      // Extract city from location
+      const city = location.split(',')[0].trim();
+      
+      // Convert budget string to proper format
+      let formattedBudget = budget;
+      if (!budget.includes('₹')) {
+        formattedBudget = `₹${budget}`;
+      }
+      
+      // Use 'Monument' as default attraction type when 'All' is selected
+      const attractionType = activeTab === 'All' ? 'Monument' : activeTab;
+      
+      // Prepare data for API - match exactly with TripRequest model in backend/app.py
+      const requestData = {
+        city: city,
+        location: location,
+        days: days,
+        budget: formattedBudget,
+        transport: activeTab === 'Fort' ? transport : undefined,
+        purpose: activeTab === 'Museum' ? purpose : undefined,
+        attraction_type: attractionType, // Use the determined attraction type
+        start_date: startDate
+      };
+      
+      console.log("Sending request to backend:", requestData);
+      
+      try {
+        // Check if backend is accessible first with a ping
+        const pingResponse = await fetch('http://localhost:8000/', { 
+          method: 'GET',
+          headers: { 'Content-Type': 'application/json' },
+          // Add a short timeout so we don't wait too long for an unreachable server
+          signal: AbortSignal.timeout(3000)
+        }).catch(error => {
+          console.error("Backend ping failed:", error);
+          throw new Error("Backend server not accessible. Please make sure the backend is running on port 8000.");
+        });
+        
+        if (!pingResponse?.ok) {
+          throw new Error(`Backend server returned ${pingResponse?.status}: ${pingResponse?.statusText}`);
         }
-      ],
-      hotels: [
-        {
-          name: "Rk Guest House Paying",
-          rating: 8.8,
-          pricePerNight: 7000,
-          totalCost: 21050
-        },
-        {
-          name: "Hotel Wonderstar Affordable Stay Near Tajmahal - Inhouse Parking with Free 5g internet",
-          rating: 7.8,
-          pricePerNight: 4536,
-          totalCost: 13658
-        },
-        {
-          name: "Hotel Blossom Rooms - Fully AC",
-          rating: 7.7,
-          pricePerNight: 3360,
-          totalCost: 10130
-        },
-        {
-          name: "Hotel Kamal Nearest To Taj Mahal",
-          rating: 7.6,
-          pricePerNight: 8680,
-          totalCost: 26090
+      
+        // Main API call to get all data at once - uses process_search_form_data from main.py
+        const response = await fetch('http://localhost:8000/api/trip', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(requestData),
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          console.error(`API Error ${response.status}: ${errorText}`);
+          throw new Error(`API request failed with status ${response.status}: ${errorText}`);
         }
-      ]
-    };
-
-    // Set the search results
-    setSearchResults(mockApiResponse);
-    setShowResults(true);
-
-    // Store in localStorage
-    localStorage.setItem('lastSearch', JSON.stringify({
-      timestamp: new Date().toISOString(),
-      tab: activeTab,
-      location: location,
-      days: days,
-      ...(activeTab === 'Budget' ? { priceRange: budget } : {}),
-      ...(activeTab === 'Rental' ? { transport } : {}),
-      ...(activeTab === 'Activities' ? { purpose } : {}),
-      ...(activeTab === 'Tours' ? { guests } : {})
-    }));
+        
+        // Get response data
+        const data = await response.json();
+        console.log('API Response:', data);
+        
+        // Validate the response data
+        if (!data.weather || !data.hotels) {
+          console.warn('Response is missing required data fields:', data);
+          throw new Error('Invalid response data: missing weather or hotels information');
+        }
+        
+        // Process hotels data
+        if (data.hotels && Array.isArray(data.hotels)) {
+          // Ensure numerical values for price fields
+          data.hotels = data.hotels.map((hotel: Hotel) => ({
+            ...hotel,
+            pricePerNight: typeof hotel.pricePerNight === 'string' ? 
+              parseFloat(hotel.pricePerNight.replace(/[^\d.]/g, '')) : hotel.pricePerNight,
+            totalCost: typeof hotel.totalCost === 'string' ? 
+              parseFloat(hotel.totalCost.replace(/[^\d.]/g, '')) : hotel.totalCost,
+            rating: typeof hotel.rating === 'string' ? 
+              parseFloat(hotel.rating) || hotel.rating : hotel.rating
+          }));
+        }
+        
+        // Process restaurants data
+        if (data.restaurants && Array.isArray(data.restaurants)) {
+          data.restaurants = data.restaurants.map((restaurant: Restaurant) => ({
+            ...restaurant,
+            rating: typeof restaurant.rating === 'string' && !isNaN(parseFloat(restaurant.rating)) ? 
+              parseFloat(restaurant.rating) : restaurant.rating
+          }));
+        }
+        
+        // Set the search results
+        setSearchResults(data);
+      } catch (error: any) {
+        console.error('API Error:', error);
+        
+        // If the main API fails, try individual endpoints
+        try {
+          console.log('Trying individual endpoints for', city);
+          
+          // Build a combined result from individual endpoints
+          const combinedResults: any = {
+            weather: [],
+            hotels: [],
+            restaurants: []
+          };
+          
+          // Try to get weather data
+          try {
+            const weatherResponse = await fetch(`http://localhost:8000/api/weather/${encodeURIComponent(city)}`);
+            if (weatherResponse.ok) {
+              const weatherData = await weatherResponse.json();
+              combinedResults.weather = weatherData.weather || [];
+            }
+          } catch (weatherError) {
+            console.error('Weather API Error:', weatherError);
+          }
+          
+          // Try to get hotel data
+          try {
+            // Convert budget string to number
+            const numericBudget = parseFloat(formattedBudget.replace(/[^\d.]/g, ''));
+            const hotelResponse = await fetch(`http://localhost:8000/api/hotels?city=${encodeURIComponent(city)}&days=${days}&budget=${numericBudget}`);
+            if (hotelResponse.ok) {
+              const hotelData = await hotelResponse.json();
+              combinedResults.hotels = hotelData.hotels || [];
+            }
+          } catch (hotelError) {
+            console.error('Hotel API Error:', hotelError);
+          }
+          
+          // Try to get restaurant data
+          try {
+            const restaurantResponse = await fetch(`http://localhost:8000/api/restaurants/${encodeURIComponent(city)}`);
+            if (restaurantResponse.ok) {
+              const restaurantData = await restaurantResponse.json();
+              combinedResults.restaurants = restaurantData.restaurants || [];
+            }
+          } catch (restaurantError) {
+            console.error('Restaurant API Error:', restaurantError);
+          }
+          
+          // If we got some data, use it
+          if (combinedResults.weather.length > 0 || combinedResults.hotels.length > 0 || combinedResults.restaurants.length > 0) {
+            combinedResults.error = "Some data may be incomplete due to API errors";
+            setSearchResults(combinedResults);
+          } else {
+            // If all individual endpoints failed, try sample data
+            throw new Error("All individual endpoints failed");
+          }
+        } catch (endpointError) {
+          // If all else fails, use sample data
+          try {
+            const fallbackResponse = await fetch('http://localhost:8000/api/sample-data');
+            
+            if (fallbackResponse.ok) {
+              const fallbackData = await fallbackResponse.json();
+              
+              // Customize the sample data with the city name
+              for (const hotel of fallbackData.hotels) {
+                hotel.name = hotel.name.replace('Sample City', city);
+              }
+              for (const restaurant of fallbackData.restaurants) {
+                restaurant.name = restaurant.name.replace('Sample City', city);
+              }
+              
+              setSearchResults({
+                ...fallbackData,
+                error: `Failed to fetch live data: ${error.message}. Showing sample data.`
+              });
+            } else {
+              throw new Error('Failed to fetch sample data');
+            }
+          } catch (fallbackError) {
+            console.error('Fallback Error:', fallbackError);
+            // If all else fails, show a simple error message
+            setSearchResults({
+              weather: [],
+              hotels: [],
+              restaurants: [],
+              error: 'Failed to load data. Please try again later.'
+            });
+          }
+        }
+      }
+      
+      // Store in localStorage regardless of result
+      localStorage.setItem('lastSearch', JSON.stringify({
+        timestamp: new Date().toISOString(),
+        tab: activeTab,
+        location: location,
+        days: days,
+        budget: budget,
+        start_date: startDate,
+        ...(activeTab === 'Fort' ? { transport } : {}),
+        ...(activeTab === 'Museum' ? { purpose } : {})
+      }));
+    } catch (error) {
+      console.error('Error in search process:', error);
+      // Show error message
+      setSearchResults({
+        weather: [],
+        hotels: [],
+        restaurants: [],
+        error: 'A search error occurred. Please try again.'
+      });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Get appropriate recommended counts based on tab
   const getDayOptions = () => {
     return [1, 2, 3, 4, 5, 6, 7, 8, 10, 14, 21, 30];
-  };
-  
-  const getGuestOptions = () => {
-    if (activeTab === 'Tours') {
-      return [1, 2, 3, 4, 5, 6, 8, 10, 12, 15, 20];
-    } else if (activeTab === 'Budget') {
-      return [1, 2, 3, 4, 5, 6, 7, 8, 10, 14, 21, 30];
-    } else {
-      return [1, 2, 3, 4, 5, 6];
-    }
   };
   
   const handleDaySelect = (count: number) => {
@@ -284,7 +461,7 @@ export default function SearchForm() {
   return (
     <>
       <div 
-        className={`backdrop-blur-md bg-white/95 rounded-3xl shadow-2xl p-7 max-w-5xl mx-auto relative border border-gray-100 z-20 transition-all duration-500 ${isFormFocused ? 'shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)]' : ''}`}
+        className={`backdrop-blur-md bg-white/95 rounded-3xl shadow-2xl p-8 max-w-6xl mx-auto relative border border-gray-100 z-20 transition-all duration-500 ${isFormFocused ? 'shadow-[0_20px_50px_rgba(8,_112,_184,_0.2)]' : ''}`}
         onClick={(e) => {
           e.stopPropagation();
           setIsFormFocused(true);
@@ -293,48 +470,24 @@ export default function SearchForm() {
         {/* Ambient background effect */}
         <div className="absolute top-0 right-0 -z-10 w-1/2 h-full bg-gradient-to-br from-blue-100/30 via-purple-100/20 to-transparent rounded-r-3xl" />
         
-        {/* Tabs */}
-        <div className="flex mb-7 justify-center">
-          <div className="bg-gray-100 p-1.5 rounded-full inline-flex shadow-inner">
-            {['Tours', 'Budget', 'Rental', 'Activities'].map((tab) => (
-              <button 
-                key={tab}
-                className={`relative overflow-hidden ${
-                  activeTab === tab 
-                    ? 'bg-gradient-to-r from-blue-600 to-purple-600 text-white shadow-md' 
-                    : 'text-gray-700 hover:text-gray-900 hover:bg-gray-200'
-                } px-7 py-3 rounded-full text-sm font-medium transition-all duration-300 transform ${activeTab === tab ? 'scale-105' : ''}`}
-                onClick={() => setActiveTab(tab)}
-              >
-                {activeTab === tab && (
-                  <span className="absolute inset-0 opacity-20">
-                    <span className="absolute inset-0 rounded-full bg-white/20 animate-pulse" />
-                  </span>
-                )}
-                {tab}
-              </button>
-            ))}
-          </div>
-        </div>
-        
         {/* Form */}
-        <div className="flex flex-col md:flex-row gap-4 items-stretch">
+        <div className="flex flex-col lg:flex-row gap-5 items-stretch">
           {/* Location Input with Dropdown */}
-          <div className={`flex-grow relative ${activeTab === 'Budget' ? 'md:w-[35%]' : ''}`} ref={locationDropdownRef}>
+          <div className="flex-grow relative" ref={locationDropdownRef}>
             <div 
-              className="bg-white border border-gray-200 rounded-2xl p-4 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 cursor-pointer"
+              className="bg-white border border-gray-200 rounded-2xl p-5 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 cursor-pointer"
               onClick={() => setShowLocationDropdown(true)}
             >
-              <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-2 mr-3 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
-                <MapPin className="w-5 h-5" />
+              <div className="bg-gradient-to-br from-blue-500 to-purple-500 rounded-full p-3 mr-4 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+                <MapPin className="w-6 h-6" />
               </div>
               <div className="flex-grow">
-                <label htmlFor="location" className="block text-xs text-gray-500 font-medium mb-1">Where to?</label>
+                <label htmlFor="location" className="block text-sm text-gray-500 font-medium mb-1">Where to?</label>
                 <div className="flex items-center">
                   <input 
                     id="location"
                     type="text" 
-                    className="text-base font-medium bg-transparent outline-none w-full"
+                    className="text-lg font-medium bg-transparent outline-none w-full"
                     placeholder="Enter destination" 
                     value={locationSearchTerm}
                     onChange={handleLocationChange}
@@ -343,7 +496,7 @@ export default function SearchForm() {
                       setShowLocationDropdown(true);
                     }}
                   />
-                  <ChevronDown className="w-4 h-4 text-gray-400 ml-2" />
+                  <ChevronDown className="w-5 h-5 text-gray-400 ml-2" />
                 </div>
               </div>
             </div>
@@ -397,44 +550,110 @@ export default function SearchForm() {
             )}
           </div>
           
-          {/* Budget Input - Only visible for Budget tab */}
-          {activeTab === 'Budget' && (
-            <div className="w-full md:w-56 relative">
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-                <div className="bg-gradient-to-br from-green-500 to-teal-500 rounded-full p-2 mr-3 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
-                  <DollarSign className="w-5 h-5" />
-                </div>
-                <div className="w-full">
-                  <label htmlFor="budget" className="block text-xs text-gray-500 font-medium mb-1">Price Range</label>
-                  <select 
-                    id="budget"
-                    className="text-base font-medium bg-transparent outline-none w-full cursor-pointer"
-                    value={budget}
-                    onChange={(e) => setBudget(e.target.value)}
-                  >
-                    <option value="₹0-₹7,500">₹0-₹7,500</option>
-                    <option value="₹7,500-₹15,000">₹7,500-₹15,000</option>
-                    <option value="₹15,000-₹22,500">₹15,000-₹22,500</option>
-                    <option value="₹22,500-₹37,500">₹22,500-₹37,500</option>
-                    <option value="₹37,500+">₹37,500+</option>
-                  </select>
+          {/* Budget Input */}
+          <div className="w-full lg:w-60 relative">
+            <div className="bg-white border border-gray-200 rounded-2xl p-5 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+              <div className="bg-gradient-to-br from-green-500 to-teal-500 rounded-full p-3 mr-4 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+                <DollarSign className="w-6 h-6" />
+              </div>
+              <div className="w-full">
+                <label htmlFor="budget" className="block text-sm text-gray-500 font-medium mb-1">Budget</label>
+                <select 
+                  id="budget"
+                  className="text-lg font-medium bg-transparent outline-none w-full cursor-pointer"
+                  value={budget}
+                  onChange={(e) => setBudget(e.target.value)}
+                >
+                  <option value="₹7,500">₹7,500</option>
+                  <option value="₹15,000">₹15,000</option>
+                  <option value="₹22,500">₹22,500</option>
+                  <option value="₹37,500">₹37,500</option>
+                  <option value="₹50,000">₹50,000</option>
+                </select>
+              </div>
+            </div>
+          </div>
+          
+          {/* Start Date Picker */}
+          <div className="w-full lg:w-64 relative" ref={datePickerRef}>
+            <div 
+              className="bg-white border border-gray-200 rounded-2xl p-5 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 cursor-pointer"
+              onClick={() => setShowDatePicker(!showDatePicker)}
+            >
+              <div className="bg-gradient-to-br from-purple-500 to-indigo-500 rounded-full p-3 mr-4 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+                <CalendarDays className="w-6 h-6" />
+              </div>
+              <div className="flex-grow overflow-hidden">
+                <label htmlFor="startDate" className="block text-sm text-gray-500 font-medium mb-1">Start Date</label>
+                <div className="flex items-center justify-between">
+                  <span className="text-lg font-medium truncate">{formatDisplayDate(startDate)}</span>
+                  <ChevronDown className="w-5 h-5 text-gray-400 ml-2 flex-shrink-0" />
                 </div>
               </div>
             </div>
-          )}
+            
+            {/* Calendar Dropdown */}
+            {showDatePicker && (
+              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 z-50 max-h-80 overflow-y-auto animate-fadeIn">
+                <div className="p-2">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-gray-100">
+                    <span className="text-xs font-semibold text-gray-500">Select Start Date</span>
+                    <button onClick={() => setShowDatePicker(false)} className="text-gray-400 hover:text-gray-600">
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                  </div>
+                  
+                  <div className="py-2">
+                    <div className="grid grid-cols-7 gap-1 mb-2">
+                      {['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'].map((day) => (
+                        <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
+                          {day}
+                        </div>
+                      ))}
+                    </div>
+                    
+                    <div className="grid grid-cols-7 gap-1">
+                      {generateCalendarDays().map((date, index) => {
+                        const dateString = date.toISOString().split('T')[0];
+                        const isSelected = dateString === startDate;
+                        const isToday = date.toDateString() === new Date().toDateString();
+                        
+                        return (
+                          <button
+                            key={index}
+                            className={`
+                              rounded-full w-8 h-8 flex items-center justify-center text-sm transition-colors
+                              ${isSelected ? 'bg-blue-500 text-white' : 'hover:bg-blue-50'}
+                              ${isToday && !isSelected ? 'border border-blue-500 text-blue-500' : ''}
+                              ${date.getMonth() !== new Date(startDate).getMonth() ? 'text-gray-400' : 'text-gray-700'}
+                            `}
+                            onClick={() => handleDateChange(dateString)}
+                          >
+                            {date.getDate()}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
           
-          {/* Transport Mode - Only visible for Rental tab */}
-          {activeTab === 'Rental' ? (
-            <div className="w-full md:w-56 relative">
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-                <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-full p-2 mr-3 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
-                  <Car className="w-5 h-5" />
+          {/* Transport Mode - Only visible for Fort type */}
+          {activeTab === 'Fort' && (
+            <div className="w-full lg:w-60 relative">
+              <div className="bg-white border border-gray-200 rounded-2xl p-5 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+                <div className="bg-gradient-to-br from-amber-500 to-orange-500 rounded-full p-3 mr-4 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+                  <Car className="w-6 h-6" />
                 </div>
                 <div className="w-full">
-                  <label htmlFor="transport" className="block text-xs text-gray-500 font-medium mb-1">Transport</label>
+                  <label htmlFor="transport" className="block text-sm text-gray-500 font-medium mb-1">Transport</label>
                   <select 
                     id="transport"
-                    className="text-base font-medium bg-transparent outline-none w-full cursor-pointer"
+                    className="text-lg font-medium bg-transparent outline-none w-full cursor-pointer"
                     value={transport}
                     onChange={(e) => setTransport(e.target.value)}
                   >
@@ -448,168 +667,129 @@ export default function SearchForm() {
                 </div>
               </div>
             </div>
-          ) : activeTab === 'Activities' ? (
-            /* Purpose Input - Only visible for Activities tab */
-            <div className="w-full md:w-56 relative">
-              <div className="bg-white border border-gray-200 rounded-2xl p-4 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
-                <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-full p-2 mr-3 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
-                  <Briefcase className="w-5 h-5" />
+          )}
+          
+          {/* Purpose Input - Only visible for Museum type */}
+          {activeTab === 'Museum' && (
+            <div className="w-full lg:w-60 relative">
+              <div className="bg-white border border-gray-200 rounded-2xl p-5 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100">
+                <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-full p-3 mr-4 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
+                  <Briefcase className="w-6 h-6" />
                 </div>
                 <div className="w-full">
-                  <label htmlFor="purpose" className="block text-xs text-gray-500 font-medium mb-1">Purpose</label>
+                  <label htmlFor="purpose" className="block text-sm text-gray-500 font-medium mb-1">Purpose</label>
                   <select 
                     id="purpose"
-                    className="text-base font-medium bg-transparent outline-none w-full cursor-pointer"
+                    className="text-lg font-medium bg-transparent outline-none w-full cursor-pointer"
                     value={purpose}
                     onChange={(e) => setPurpose(e.target.value)}
                   >
                     <option value="Fun">Fun</option>
                     <option value="Business">Business</option>
-                    <option value="Commercial">Commercial</option>
-                    <option value="Office">Office</option>
-                    <option value="Tour">Tour</option>
                     <option value="Education">Education</option>
+                    <option value="Tour">Tour</option>
                   </select>
                 </div>
               </div>
             </div>
-          ) : (
-            /* Guests Input for Tours tab */
-            <div className="w-full md:w-56 relative" ref={guestsDropdownRef}>
-              <div 
-                className="bg-white border border-gray-200 rounded-2xl p-4 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 cursor-pointer"
-                onClick={() => setShowGuestsDropdown(!showGuestsDropdown)}
-              >
-                <div className="bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full p-2 mr-3 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
-                  <User className="w-5 h-5" />
-                </div>
-                <div className="flex-grow">
-                  <label htmlFor="guests" className="block text-xs text-gray-500 font-medium mb-1">Guests</label>
-                  <div className="flex items-center justify-between">
-                    <span className="text-base font-medium">{guests}</span>
-                    <div className="flex items-center">
-                      <span className="text-gray-500 mr-2">guests</span>
-                      <ChevronDown className="w-4 h-4 text-gray-400" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-              
-              {/* Days Dropdown */}
-              {showGuestsDropdown && (
-                <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 z-40 max-h-60 overflow-y-auto animate-fadeIn">
-                  <div className="p-2">
-                    <div className="flex items-center px-3 py-2">
-                      <span className="text-xs font-semibold text-gray-500">Select Number of Guests</span>
-                    </div>
-                    
-                    {getGuestOptions().map((count) => (
-                      <div
-                        key={count}
-                        className={`px-3 py-2.5 hover:bg-blue-50 rounded-lg cursor-pointer text-sm transition-colors ${guests === count ? 'bg-blue-50 font-medium' : ''}`}
-                        onClick={() => handleGuestSelect(count)}
-                      >
-                        <div className="flex items-center justify-between">
-                          <span>{count} {count === 1 ? 'guest' : 'guests'}</span>
-                          {count === guests && (
-                            <svg className="w-4 h-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                              <path fillRule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586l-3.293-3.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clipRule="evenodd" />
-                            </svg>
-                          )}
-                        </div>
-                        {count > 14 && (
-                          <div className="text-xs text-blue-500 mt-1">Extended stay discount available</div>
-                        )}
-                      </div>
-                    ))}
-                    
-                    <div className="px-3 py-2 mt-2 border-t border-gray-100">
-                      <div className="text-xs text-gray-500">
-                        Need more options? <span className="text-blue-500 cursor-pointer hover:underline">Contact us</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
           )}
           
           {/* Days Dropdown for all tabs */}
-          <div className="w-full md:w-56 relative" ref={daysDropdownRef}>
-            <div 
-              className="bg-white border border-gray-200 rounded-2xl p-4 h-full flex items-center shadow-sm hover:shadow-md transition-all duration-300 group focus-within:border-blue-400 focus-within:ring-2 focus-within:ring-blue-100 cursor-pointer"
-              onClick={() => setShowDaysDropdown(!showDaysDropdown)}
+          <div className="w-full lg:w-52 relative" ref={daysDropdownRef}>
+            <button 
+              onClick={(e) => {
+                e.preventDefault();
+                setShowDaysDropdown(!showDaysDropdown);
+              }}
+              className="relative w-full h-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-5 rounded-2xl text-base font-medium flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300"
             >
-              <div className="bg-gradient-to-br from-blue-500 to-indigo-500 rounded-full p-2 mr-3 text-white shadow-md group-hover:scale-105 transition-transform duration-300">
-                <Calendar className="w-5 h-5" />
-              </div>
-              <div className="flex-grow">
-                <label htmlFor="days" className="block text-xs text-gray-500 font-medium mb-1">Days</label>
-                <div className="flex items-center justify-between">
-                  <span className="text-base font-medium">{days}</span>
-                  <div className="flex items-center">
-                    <span className="text-gray-500 mr-2">days</span>
-                    <ChevronDown className="w-4 h-4 text-gray-400" />
-                  </div>
-                </div>
-              </div>
-            </div>
+              <Calendar className="w-5 h-5 mr-2 text-blue-500" />
+              <span>Days</span>
+              <span className="text-gray-500 mx-1">{days}</span>
+              <ChevronDown className="w-4 h-4 ml-1 text-gray-400" />
+            </button>
             
             {/* Days Dropdown */}
             {showDaysDropdown && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-lg border border-gray-100 z-40 max-h-60 overflow-y-auto animate-fadeIn">
+              <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 z-40 w-48 animate-fadeIn">
                 <div className="p-2">
-                  <div className="flex items-center px-3 py-2">
-                    <span className="text-xs font-semibold text-gray-500">Select Number of Days</span>
+                  <div className="text-xs font-semibold text-gray-500 px-3 py-2 border-b border-gray-100">
+                    Select Number of Days
                   </div>
                   
                   {getDayOptions().map((count) => (
                     <div
                       key={count}
-                      className={`px-3 py-2.5 hover:bg-blue-50 rounded-lg cursor-pointer text-sm transition-colors ${days === count ? 'bg-blue-50 font-medium' : ''}`}
+                      className={`px-3 py-2.5 hover:bg-blue-50 rounded-lg cursor-pointer text-sm flex items-center transition-colors ${days === count ? 'bg-blue-50 text-blue-600 font-medium' : ''}`}
                       onClick={() => handleDaySelect(count)}
                     >
-                      <div className="flex items-center justify-between">
-                        <span>{count} {count === 1 ? 'day' : 'days'}</span>
-                        {count === days && (
-                          <svg className="w-4 h-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586l-3.293-3.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clipRule="evenodd" />
-                          </svg>
-                        )}
-                      </div>
-                      {count > 14 && (
-                        <div className="text-xs text-blue-500 mt-1">Extended stay discount available</div>
-                      )}
+                      <span className={`w-2 h-2 rounded-full mr-2 ${days === count ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
+                      <span>{count}</span>
                     </div>
                   ))}
-                  
-                  <div className="px-3 py-2 mt-2 border-t border-gray-100">
-                    <div className="text-xs text-gray-500">
-                      Need more options? <span className="text-blue-500 cursor-pointer hover:underline">Contact us</span>
-                    </div>
-                  </div>
                 </div>
               </div>
             )}
           </div>
           
-          {/* Search Button */}
-          <div className="w-full md:w-auto">
+          {/* Search and Purpose Buttons */}
+          <div className="w-full lg:w-auto lg:min-w-[220px] flex gap-3">
+            {/* Purpose Button */}
+            <div className="relative flex-grow lg:flex-grow-0" ref={purposeDropdownRef}>
+              <button 
+                onClick={(e) => {
+                  e.preventDefault();
+                  setShowPurposeDropdown(!showPurposeDropdown);
+                }}
+                className="relative w-full h-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 px-4 py-5 rounded-2xl text-base font-medium flex items-center justify-center shadow-sm hover:shadow-md transition-all duration-300"
+              >
+                <Info className="w-5 h-5 mr-2 text-blue-500" />
+                <span>Purpose</span>
+                <ChevronDown className="w-4 h-4 ml-1 text-gray-400" />
+              </button>
+              
+              {/* Purpose Dropdown */}
+              {showPurposeDropdown && (
+                <div className="absolute right-0 top-full mt-2 bg-white rounded-xl shadow-lg border border-gray-100 z-40 w-48 animate-fadeIn">
+                  <div className="p-2">
+                    <div className="text-xs font-semibold text-gray-500 px-3 py-2 border-b border-gray-100">
+                      Select Purpose Type
+                    </div>
+                    
+                    {['All', 'Monument', 'Fort', 'Museum', 'Palace'].map((option) => (
+                      <div
+                        key={option}
+                        className={`px-3 py-2.5 hover:bg-blue-50 rounded-lg cursor-pointer text-sm flex items-center transition-colors ${activeTab === option ? 'bg-blue-50 text-blue-600 font-medium' : ''}`}
+                        onClick={() => {
+                          setActiveTab(option);
+                          setShowPurposeDropdown(false);
+                        }}
+                      >
+                        <span className={`w-2 h-2 rounded-full mr-2 ${activeTab === option ? 'bg-blue-500' : 'bg-gray-300'}`}></span>
+                        {option}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+            
+            {/* Search Button */}
             <button 
               onClick={handleSearch}
-              className="relative w-full h-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-10 py-4 rounded-2xl text-base font-medium flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
+              className="relative w-full h-full bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white px-12 py-5 rounded-2xl text-lg font-medium flex items-center justify-center shadow-lg hover:shadow-xl transition-all duration-300 overflow-hidden group"
             >
               <div className="absolute inset-0 w-full h-full bg-gradient-to-r from-blue-600/0 via-white/20 to-blue-600/0 transform -skew-x-12 -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-              <Search className="w-5 h-5 mr-2" />
+              <Search className="w-6 h-6 mr-2" />
               <span className="relative z-10">Search</span>
             </button>
           </div>
         </div>
         
         {/* Help Link */}
-        <div className="flex justify-end mt-5">
-          <button className="text-gray-500 hover:text-blue-600 flex items-center text-xs transition-colors hover:scale-105 transform duration-300">
-            <Info className="w-4 h-4 mr-1.5" />
+        <div className="flex justify-end mt-6">
+          <button className="text-gray-500 hover:text-blue-600 flex items-center text-sm transition-colors hover:scale-105 transform duration-300">
+            <Info className="w-5 h-5 mr-1.5" />
             Need some help?
           </button>
         </div>
@@ -629,7 +809,7 @@ export default function SearchForm() {
       </div>
 
       {/* Search Results */}
-      {showResults && searchResults && (
+      {showResults && (
         <div className="fixed inset-0 z-50 overflow-y-auto bg-white dark:bg-gray-900">
           <div className="min-h-screen">
             <div className="sticky top-0 z-10 bg-white dark:bg-gray-900 shadow-md">
@@ -648,10 +828,27 @@ export default function SearchForm() {
                 </button>
               </div>
             </div>
-            <SearchResults
-              weatherData={searchResults.weather}
-              hotels={searchResults.hotels}
-            />
+            {/* Check if searchResults exists before rendering the component */}
+            {searchResults ? (
+              <SearchResults
+                weatherData={searchResults.weather || []}
+                hotels={searchResults.hotels || []}
+                restaurants={searchResults.restaurants || []}
+                attractions={searchResults.attractions || []}
+                isLoading={isLoading}
+                error={searchResults.error}
+              />
+            ) : (
+              <div className="container mx-auto px-4 py-8 flex flex-col items-center justify-center min-h-[40vh]">
+                <Loader2 className="w-12 h-12 text-blue-500 animate-spin mb-4" />
+                <p className="text-lg text-gray-600 dark:text-gray-300">
+                  Preparing your search results...
+                </p>
+                <Link href="/test-results" className="mt-8 text-blue-500 hover:underline">
+                  View Test Results Page
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       )}
