@@ -4,6 +4,9 @@ import { useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { ChevronRight, Star, MapPin, Users, Calendar, ChevronDown, Search } from 'lucide-react';
+import TravelExperience from './components/TravelExperience';
+import WhyTravelWithUs from './components/whyus/WhyTravelWithUs';
+import TestimonialSlider from './components/testimonials/TestimonialSlider';
 
 interface CategoryTour {
   name: string;
@@ -349,6 +352,12 @@ export default function HomePage() {
           )}
         </section>
       )}
+
+      {/* Why Travel With Us Section */}
+      <WhyTravelWithUs />
+
+      {/* Testimonials Section */}
+      <TestimonialSlider />
     </main>
   );
 }
