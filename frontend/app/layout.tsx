@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import Navbar from "./components/Navbar";
+import Navbar from "@/components/Navbar";
 
 // Import slick slider CSS (these imports won't be used at build time, they are imported in the component)
 // This is just to make TypeScript aware of them

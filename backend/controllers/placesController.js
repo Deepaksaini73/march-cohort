@@ -952,37 +952,8 @@ exports.getTripPlannerData = async (req, res, next) => {
       return res.status(400).json({ error: 'Location parameter is required' });
     }
     
-    // Special handling for Indian locations
-    const indiaLocations = {
-      'jaipur': 'Jaipur, Rajasthan, India',
-      'delhi': 'New Delhi, India',
-      'mumbai': 'Mumbai, Maharashtra, India',
-      'kolkata': 'Kolkata, West Bengal, India',
-      'bangalore': 'Bangalore, Karnataka, India',
-      'chennai': 'Chennai, Tamil Nadu, India',
-      'agra': 'Agra, Uttar Pradesh, India',
-      'goa': 'Goa, India',
-      'kerala': 'Kerala, India',
-      'varanasi': 'Varanasi, India'
-    };
-    
-    // Normalize input location and check if it's a known Indian location
-    const normalizedLocation = location.toLowerCase().trim();
-    const searchLocation = Object.keys(indiaLocations).some(key => normalizedLocation.includes(key)) 
-      ? Object.keys(indiaLocations).find(key => normalizedLocation.includes(key))
-        ? indiaLocations[Object.keys(indiaLocations).find(key => normalizedLocation.includes(key))]
-        : location
-      : location;
-    
-    // Check cache with the normalized location
-    const cacheKey = generateCacheKey('trip-planner', { location: searchLocation });
-    if (cache.has(cacheKey)) {
-      console.log('Returning cached trip planner data for', searchLocation);
-      return res.json(cache.get(cacheKey));
-    }
-    
     // First get the main location details to get coordinates
-    const searchParams = { query: searchLocation };
+    const searchParams = { query: location };
     const searchUrl = buildApiUrl('textsearch', searchParams);
     console.log('Google Places API location search URL:', searchUrl);
     
@@ -1009,38 +980,23 @@ exports.getTripPlannerData = async (req, res, next) => {
     const { lat, lng } = mainLocation.geometry.location;
     const mainCoordinates = { lat, lng };
     
-    // Define categories to search for with more specific Indian context if applicable
-    const isIndianLocation = Object.values(indiaLocations).some(loc => 
-      searchLocation.toLowerCase().includes(loc.toLowerCase())
-    );
-    
-    const categories = isIndianLocation 
-      ? [
-          { name: 'Attractions', query: `tourist attractions in ${searchLocation}` },
-          { name: 'Historical', query: `historical places in ${searchLocation}` },
-          { name: 'Temples', query: `temples in ${searchLocation}` },
-          { name: 'Cultural', query: `cultural sites in ${searchLocation}` },
-          { name: 'Markets', query: `bazaars and markets in ${searchLocation}` },
-          { name: 'Palaces', query: `palaces and forts in ${searchLocation}` },
-          { name: 'Gardens', query: `gardens and parks in ${searchLocation}` },
-          { name: 'Food', query: `best restaurants in ${searchLocation}` }
-        ]
-      : [
-          { name: 'Attractions', query: `tourist attractions in ${searchLocation}` },
-          { name: 'Historical', query: `historical places in ${searchLocation}` },
-          { name: 'Cultural', query: `cultural sites in ${searchLocation}` },
-          { name: 'Museums', query: `museums in ${searchLocation}` },
-          { name: 'Religious', query: `temples and religious sites in ${searchLocation}` },
-          { name: 'Parks', query: `parks and gardens in ${searchLocation}` },
-          { name: 'Shopping', query: `shopping markets in ${searchLocation}` },
-          { name: 'Food', query: `best restaurants in ${searchLocation}` }
-        ];
+    // Define categories to search for
+    const categories = [
+      { name: 'Attractions', query: `tourist attractions in ${location}` },
+      { name: 'Historical', query: `historical places in ${location}` },
+      { name: 'Cultural', query: `cultural sites in ${location}` },
+      { name: 'Museums', query: `museums in ${location}` },
+      { name: 'Religious', query: `temples and religious sites in ${location}` },
+      { name: 'Parks', query: `parks and gardens in ${location}` },
+      { name: 'Shopping', query: `shopping markets in ${location}` },
+      { name: 'Food', query: `best restaurants in ${location}` }
+    ];
     
     // Fetch data for each category concurrently
     const categoryPromises = categories.map(async (category) => {
       const params = { query: category.query };
       const url = buildApiUrl('textsearch', params);
-      console.log(`Fetching ${category.name} for ${searchLocation}:`, url);
+      console.log(`Fetching ${category.name} for ${location}:`, url);
       
       try {
         const response = await axios.get(url);
@@ -1098,20 +1054,8 @@ exports.getTripPlannerData = async (req, res, next) => {
     // Wait for all category data to be fetched
     const categoriesData = await Promise.all(categoryPromises);
     
-    // Filter out categories with no places
-    const filteredCategoriesData = categoriesData.filter(category => category.places.length > 0);
-    
-    // If no places were found, return an error
-    if (filteredCategoriesData.length === 0) {
-      return res.status(404).json({ 
-        error: 'No places found for this location',
-        location: location,
-        timestamp: new Date().toISOString()
-      });
-    }
-    
     // Create a "top rated" category from all places
-    const allPlaces = filteredCategoriesData.flatMap(category => category.places);
+    const allPlaces = categoriesData.flatMap(category => category.places);
     const uniquePlaces = [];
     const seenPlaceIds = new Set();
     
@@ -1133,7 +1077,7 @@ exports.getTripPlannerData = async (req, res, next) => {
       .slice(0, 10);
     
     // Add the top rated category at the beginning
-    filteredCategoriesData.unshift({
+    categoriesData.unshift({
       category: 'Top Rated',
       places: topRated
     });
@@ -1149,12 +1093,9 @@ exports.getTripPlannerData = async (req, res, next) => {
           ? mainLocation.photos[0].photo_reference 
           : null
       },
-      categories: filteredCategoriesData,
+      categories: categoriesData,
       total_places_found: uniquePlaces.length
     };
-    
-    // Cache the results for future use (24 hours for popular destinations)
-    cache.set(cacheKey, responseData, isIndianLocation ? 86400000 : 3600000);
     
     res.json(responseData);
   } catch (error) {
@@ -1696,106 +1637,5 @@ exports.getTravelTips = async (req, res, next) => {
     } else {
       next(error);
     }
-  }
-};
-
-/**
- * Get simplified popular destinations by location name
- */
-exports.getSimplifiedPopularDestinations = async (req, res, next) => {
-  try {
-    const { name } = req.query;
-    
-    if (!name) {
-      return res.status(400).json({
-        error: true,
-        message: "Location name is required"
-      });
-    }
-    
-    // Normalize the input location
-    const normalizedLocation = name.toLowerCase().trim();
-    
-    // Define Indian city mappings for better results
-    const indianLocations = {
-      'delhi': 'Delhi, India',
-      'mumbai': 'Mumbai, Maharashtra, India',
-      'bangalore': 'Bangalore, Karnataka, India',
-      'bengaluru': 'Bangalore, Karnataka, India',
-      'hyderabad': 'Hyderabad, Telangana, India',
-      'chennai': 'Chennai, Tamil Nadu, India',
-      'kolkata': 'Kolkata, West Bengal, India',
-      'jaipur': 'Jaipur, Rajasthan, India',
-      'agra': 'Agra, Uttar Pradesh, India',
-      'goa': 'Goa, India',
-      'kerala': 'Kerala, India',
-      'varanasi': 'Varanasi, Uttar Pradesh, India',
-      'udaipur': 'Udaipur, Rajasthan, India',
-      'rishikesh': 'Rishikesh, Uttarakhand, India'
-    };
-    
-    // Use mapped location if available, otherwise use the input
-    const searchLocation = indianLocations[normalizedLocation] || name;
-
-    // First, find the location coordinates
-    const locationUrl = `https://maps.googleapis.com/maps/api/place/findplacefromtext/json?input=${encodeURIComponent(searchLocation)}&inputtype=textquery&fields=place_id,geometry,name,formatted_address,photos&key=${process.env.GOOGLE_PLACES_API_KEY}`;
-    
-    const locationResponse = await fetch(locationUrl);
-    const locationData = await locationResponse.json();
-    
-    if (locationData.status !== 'OK' || !locationData.candidates || locationData.candidates.length === 0) {
-      return res.status(404).json({
-        error: true,
-        message: "No location found with that name",
-        location: searchLocation
-      });
-    }
-    
-    const mainLocation = locationData.candidates[0];
-    const location = mainLocation.geometry ? mainLocation.geometry.location : null;
-    
-    if (!location) {
-      return res.status(404).json({
-        error: true,
-        message: "No coordinate information found for this location",
-        location: searchLocation
-      });
-    }
-    
-    // Now search for popular places/destinations nearby
-    const placesUrl = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${location.lat},${location.lng}&radius=20000&type=tourist_attraction&rankby=prominence&key=${process.env.GOOGLE_PLACES_API_KEY}`;
-    
-    const placesResponse = await fetch(placesUrl);
-    const placesData = await placesResponse.json();
-    
-    if (placesData.status !== 'OK' || !placesData.results) {
-      return res.status(404).json({
-        error: true,
-        message: "No destinations found near this location",
-        location: searchLocation
-      });
-    }
-    
-    // Format the results with only essential information
-    const destinations = placesData.results.map(place => ({
-      name: place.name,
-      address: place.vicinity,
-      rating: place.rating || 0,
-      total_ratings: place.user_ratings_total || 0,
-      photo_reference: place.photos && place.photos[0] ? place.photos[0].photo_reference : null
-    }));
-    
-    return res.status(200).json({
-      location: mainLocation.formatted_address || searchLocation,
-      destinations: destinations
-    });
-    
-  } catch (error) {
-    console.error('Error in getSimplifiedPopularDestinations:', error);
-    return res.status(500).json({
-      error: true,
-      message: "Server error while fetching destinations",
-      details: error.message
-    });
   }
 }; 

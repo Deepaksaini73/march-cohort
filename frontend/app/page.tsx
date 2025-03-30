@@ -2,198 +2,353 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import OurfeaturTool from './OurfeaturTool';
-
-import Hero from './components/hero/Hero';
-import TourCategories from './components/tours/TourCategories';
-import WhyTravelWithUs from './components/whyus/WhyTravelWithUs';
-import TestimonialSlider from './components/testimonials/TestimonialSlider';
-
 import Link from 'next/link';
+import { ChevronRight, Star, MapPin, Users, Calendar, ChevronDown, Search } from 'lucide-react';
 
+interface CategoryTour {
+  name: string;
+  address: string;
+  rating: number;
+  total_ratings: number;
+  photo_reference: string;
+  place_id: string;
+  price: number;
+  duration: string;
+}
 
-export default function Home() {
+const categories = [
+  {
+    id: 'mountain',
+    name: 'Mountain',
+    image: 'https://images.unsplash.com/photo-1585409677983-0f6c41ca9c3b?auto=format&fit=crop&q=80',
+    tours: '356 Tours',
+    activities: '264 Activities',
+    defaultLocation: 'Himachal Pradesh'
+  },
+  {
+    id: 'safari',
+    name: 'Safari',
+    image: 'https://images.unsplash.com/photo-1547471080-7cc2caa01a7e?auto=format&fit=crop&q=80',
+    tours: '356 Tours',
+    activities: '264 Activities',
+    defaultLocation: 'Rajasthan'
+  },
+  {
+    id: 'desert',
+    name: 'Desert',
+    image: 'https://images.unsplash.com/photo-1473580044384-7ba9967e16a0?auto=format&fit=crop&q=80',
+    tours: '356 Tours',
+    activities: '264 Activities',
+    defaultLocation: 'Rajasthan'
+  },
+  {
+    id: 'flower',
+    name: 'Flower',
+    image: 'https://images.unsplash.com/photo-1530092285049-1c42085fd395?auto=format&fit=crop&q=80',
+    tours: '356 Tours',
+    activities: '264 Activities',
+    defaultLocation: 'Kerala'
+  },
+  {
+    id: 'beach',
+    name: 'Beach',
+    image: 'https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?auto=format&fit=crop&q=80',
+    tours: '356 Tours',
+    activities: '264 Activities',
+    defaultLocation: 'Goa'
+  },
+  {
+    id: 'temple',
+    name: 'Temples',
+    image: 'https://images.unsplash.com/photo-1570458436416-b8fcccfe883f?auto=format&fit=crop&q=80',
+    tours: '356 Tours',
+    activities: '264 Activities',
+    defaultLocation: 'Tamil Nadu'
+  },
+  {
+    id: 'yacht',
+    name: 'Yacht',
+    image: 'https://images.unsplash.com/photo-1567899378494-47b22a2ae96a?auto=format&fit=crop&q=80',
+    tours: '356 Tours',
+    activities: '264 Activities',
+    defaultLocation: 'Mumbai'
+  },
+  {
+    id: 'valley',
+    name: 'Valley',
+    image: 'https://images.unsplash.com/photo-1486870591958-9b9d0d1dda99?auto=format&fit=crop&q=80',
+    tours: '356 Tours',
+    activities: '264 Activities',
+    defaultLocation: 'Uttarakhand'
+  }
+];
+
+export default function HomePage() {
+  const [selectedTab, setSelectedTab] = useState('Tours');
+  const [location, setLocation] = useState('Mumbai, India');
+  const [guests, setGuests] = useState(4);
+  const [days, setDays] = useState(3);
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+  const [categoryTours, setCategoryTours] = useState<CategoryTour[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const fetchCategoryTours = async (category: string, location: string) => {
+    setIsLoading(true);
+    try {
+      const response = await fetch(
+        `http://localhost:5000/api/places/tours?category=${category}&location=${location}&limit=10`
+      );
+      const data = await response.json();
+      setCategoryTours(data.tours || []);
+      setSelectedCategory(category);
+    } catch (error) {
+      console.error('Error fetching tours:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-white">
-      <Hero />
-      <TourCategories />
-      
-      {/* Travel Options Showcase */}
-      <section className="py-16 bg-gradient-to-r from-blue-50 to-purple-50">
-        <div className="container mx-auto px-4">
-          <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-purple-600">
-              Discover Your Perfect Journey
-            </h2>
-            <p className="text-gray-600 max-w-2xl mx-auto">
-              Explore our handpicked selection of mindful travel experiences designed to rejuvenate your body, mind, and soul.
+    <main className="min-h-screen bg-gray-50">
+      {/* Hero Section */}
+      <div className="relative h-[90vh] bg-cover bg-center" 
+           style={{ 
+             backgroundImage: 'url(https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?auto=format&fit=crop&q=80)',
+             backgroundPosition: 'center 40%'
+           }}>
+        <div className="absolute inset-0 bg-black/40" />
+        <div className="absolute inset-0 flex flex-col justify-center px-4 max-w-7xl mx-auto">
+          <div className="space-y-6 max-w-4xl">
+            <span className="inline-block bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-medium">
+              Discovery the World
+            </span>
+            
+            <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
+              Unleash Your Wanderlust<br />
+              Book Your Next Journey
+            </h1>
+            
+            <p className="text-xl text-white/90 max-w-2xl">
+              Crafting Exceptional Journeys: Your Global Escape Planner.<br />
+              Unleash Your Wanderlust: Seamless Travel, Extraordinary Adventures
             </p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {/* Tours Card */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl group">
-              <div className="relative h-64">
-                <Image 
-                  src="/images/maldives.jpg" 
-                  alt="Guided Tours" 
-                  fill 
-                  className="object-cover transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                <div className="absolute top-4 left-4 bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  Popular
-                </div>
+
+            {/* Search Box */}
+            <div className="bg-white rounded-2xl p-4 mt-8 max-w-4xl shadow-lg">
+              {/* Tabs */}
+              <div className="flex gap-4 mb-6">
+                {['Tours', 'Budget', 'Rental', 'Activities'].map((tab) => (
+                  <button
+                    key={tab}
+                    onClick={() => setSelectedTab(tab)}
+                    className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
+                      selectedTab === tab
+                        ? 'bg-blue-600 text-white'
+                        : 'text-gray-600 hover:bg-gray-100'
+                    }`}
+                  >
+                    {tab}
+                  </button>
+                ))}
               </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2 text-gray-800">Guided Tours</h3>
-                <p className="text-gray-600 mb-4">Immersive experiences led by local experts who share authentic insights and hidden gems.</p>
-                <div className="flex items-center text-sm text-gray-500 mb-4">
-                  <span className="flex items-center mr-4">
-                    <svg className="w-4 h-4 mr-1 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                    </svg>
-                    4.92 (512 reviews)
-                  </span>
-                  <span className="flex items-center">
-                    <svg className="w-4 h-4 mr-1 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                    </svg>
-                    28 destinations
-                  </span>
+
+              {/* Search Form */}
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Where to?</label>
+                  <div className="relative">
+                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <input
+                      type="text"
+                      value={location}
+                      onChange={(e) => setLocation(e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      placeholder="Location"
+                    />
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  </div>
                 </div>
-                <Link href="/tours" className="block w-full text-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2 rounded-lg font-medium transition-colors">
-                  Explore Tours
-                </Link>
-              </div>
-            </div>
-            
-            {/* Hotels Card */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl group">
-              <div className="relative h-64">
-                <Image 
-                  src="/images/boating.jpg" 
-                  alt="Luxury Hotels" 
-                  fill 
-                  className="object-cover transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                <div className="absolute top-4 left-4 bg-purple-600 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  Best Value
+
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Guests</label>
+                  <div className="relative">
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <select
+                      value={guests}
+                      onChange={(e) => setGuests(Number(e.target.value))}
+                      className="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                      aria-label="Number of guests"
+                    >
+                      {[1, 2, 3, 4, 5, 6].map((num) => (
+                        <option key={num} value={num}>
+                          {num} guests
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  </div>
                 </div>
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2 text-gray-800">Luxury Hotels</h3>
-                <p className="text-gray-600 mb-4">Carefully selected accommodations that offer tranquility and mindful amenities for your stay.</p>
-                <div className="flex items-center text-sm text-gray-500 mb-4">
-                  <span className="flex items-center mr-4">
-                    <svg className="w-4 h-4 mr-1 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                    </svg>
-                    4.88 (348 reviews)
-                  </span>
-                  <span className="flex items-center">
-                    <svg className="w-4 h-4 mr-1 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                    </svg>
-                    42 properties
-                  </span>
+
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Days</label>
+                  <div className="relative">
+                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                    <select
+                      value={days}
+                      onChange={(e) => setDays(Number(e.target.value))}
+                      className="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
+                      aria-label="Number of days"
+                    >
+                      {[1, 2, 3, 4, 5, 6, 7].map((num) => (
+                        <option key={num} value={num}>
+                          {num} days
+                        </option>
+                      ))}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  </div>
                 </div>
-                <Link href="/hotels" className="block w-full text-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2 rounded-lg font-medium transition-colors">
-                  Find Hotels
-                </Link>
-              </div>
-            </div>
-            
-            {/* Rentals Card */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl group">
-              <div className="relative h-64">
-                <Image 
-                  src="/images/santorini.jpg" 
-                  alt="Private Rentals" 
-                  fill 
-                  className="object-cover transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                <div className="absolute top-4 left-4 bg-amber-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  New
-                </div>
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2 text-gray-800">Private Rentals</h3>
-                <p className="text-gray-600 mb-4">Unique homes and retreats that provide a perfect base for your mindful travel experience.</p>
-                <div className="flex items-center text-sm text-gray-500 mb-4">
-                  <span className="flex items-center mr-4">
-                    <svg className="w-4 h-4 mr-1 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                    </svg>
-                    4.95 (216 reviews)
-                  </span>
-                  <span className="flex items-center">
-                    <svg className="w-4 h-4 mr-1 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                    </svg>
-                    35 locations
-                  </span>
-                </div>
-                <Link href="/rentals" className="block w-full text-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2 rounded-lg font-medium transition-colors">
-                  Browse Rentals
-                </Link>
+
+                <button
+                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-8 py-3 font-medium flex items-center justify-center gap-2 transition-colors"
+                >
+                  <Search className="w-5 h-5" />
+                  Search
+                </button>
               </div>
             </div>
-            
-            {/* Activities Card */}
-            <div className="bg-white rounded-xl shadow-md overflow-hidden transform transition duration-300 hover:scale-105 hover:shadow-xl group">
-              <div className="relative h-64">
-                <Image 
-                  src="/images/ocean-wave.jpg" 
-                  alt="Mindful Activities" 
-                  fill 
-                  className="object-cover transition-transform duration-500"
-                />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-                <div className="absolute top-4 left-4 bg-green-500 text-white px-3 py-1 rounded-full text-sm font-medium">
-                  Trending
-                </div>
-              </div>
-              <div className="p-6">
-                <h3 className="text-xl font-bold mb-2 text-gray-800">Mindful Activities</h3>
-                <p className="text-gray-600 mb-4">Engage in transformative experiences that promote balance, awareness and inner peace.</p>
-                <div className="flex items-center text-sm text-gray-500 mb-4">
-                  <span className="flex items-center mr-4">
-                    <svg className="w-4 h-4 mr-1 text-amber-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M10.788 3.21c.448-1.077 1.976-1.077 2.424 0l2.082 5.007 5.404.433c1.164.093 1.636 1.545.749 2.305l-4.117 3.527 1.257 5.273c.271 1.136-.964 2.033-1.96 1.425L12 18.354 7.373 21.18c-.996.608-2.231-.29-1.96-1.425l1.257-5.273-4.117-3.527c-.887-.76-.415-2.212.749-2.305l5.404-.433 2.082-5.006z" clipRule="evenodd" />
-                    </svg>
-                    4.97 (423 reviews)
-                  </span>
-                  <span className="flex items-center">
-                    <svg className="w-4 h-4 mr-1 text-blue-500" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                      <path fillRule="evenodd" d="M11.54 22.351l.07.04.028.016a.76.76 0 00.723 0l.028-.015.071-.041a16.975 16.975 0 001.144-.742 19.58 19.58 0 002.683-2.282c1.944-1.99 3.963-4.98 3.963-8.827a8.25 8.25 0 00-16.5 0c0 3.846 2.02 6.837 3.963 8.827a19.58 19.58 0 002.682 2.282 16.975 16.975 0 001.145.742zM12 13.5a3 3 0 100-6 3 3 0 000 6z" clipRule="evenodd" />
-                    </svg>
-                    56 activities
-                  </span>
-                </div>
-                <Link href="/activities" className="block w-full text-center bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white py-2 rounded-lg font-medium transition-colors">
-                  Explore Activities
-                </Link>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-16 text-center">
-            <p className="text-gray-600 mb-6">Not sure where to start? Let us help you find the perfect experience</p>
-            <Link href="/tours" className="inline-flex items-center px-6 py-3 text-lg font-medium text-white bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 rounded-full transition-colors shadow-lg hover:shadow-xl">
-              <span>Discover All Experiences</span>
-              <svg className="w-5 h-5 ml-2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
-                <path fillRule="evenodd" d="M12.97 3.97a.75.75 0 011.06 0l7.5 7.5a.75.75 0 010 1.06l-7.5 7.5a.75.75 0 11-1.06-1.06l6.22-6.22H3a.75.75 0 010-1.5h16.19l-6.22-6.22a.75.75 0 010-1.06z" clipRule="evenodd" />
-              </svg>
-            </Link>
           </div>
         </div>
+      </div>
+
+      {/* Top Categories Section */}
+      <section className="max-w-7xl mx-auto px-4 py-16">
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900">Top Categories of Tours</h2>
+            <p className="text-gray-600 mt-2">Favorite destinations based on customer reviews</p>
+          </div>
+          <Link
+            href="/tours"
+            className="flex items-center gap-2 bg-black text-white px-6 py-2 rounded-full hover:bg-gray-800 transition-colors"
+          >
+            View More
+            <ChevronRight className="w-4 h-4" />
+          </Link>
+        </div>
+
+        {/* Categories Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {categories.map((category) => (
+            <Link
+              key={category.id}
+              href={`/home/categories-selected?category=${category.id}&location=${category.defaultLocation}`}
+              className="group"
+            >
+              <div className="relative h-64 rounded-2xl overflow-hidden">
+                <Image
+                  src={category.image}
+                  alt={category.name}
+                  fill
+                  className="object-cover group-hover:scale-110 transition-transform duration-300"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                <div className="absolute bottom-0 left-0 p-6">
+                  <h3 className="text-xl font-bold text-white mb-2">{category.name}</h3>
+                  <p className="text-white/80 text-sm">
+                    {category.tours}, {category.activities}
+                  </p>
+                </div>
+                <div className="absolute top-4 right-4">
+                  <ChevronRight className="w-6 h-6 text-white" />
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
       </section>
-      
-      <WhyTravelWithUs />
-      <TestimonialSlider />
+
+      {/* Selected Category Tours */}
+      {selectedCategory && (
+        <section className="max-w-7xl mx-auto px-4 pb-16">
+          <div className="relative h-[40vh] rounded-3xl overflow-hidden mb-12">
+            <Image
+              src={categories.find(c => c.id === selectedCategory)?.image || ''}
+              alt={selectedCategory}
+              fill
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+            <div className="absolute bottom-0 left-0 p-12 text-white">
+              <h2 className="text-5xl font-bold mb-4">{selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Tours</h2>
+              <p className="text-lg">356 Tours, 264 Activities</p>
+            </div>
+          </div>
+
+          <div className="mb-12">
+            <h3 className="text-2xl font-bold mb-4">About {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Tours</h3>
+            <p className="text-gray-600">
+              Explore majestic {selectedCategory} destinations, challenging experiences, and breathtaking views with our {selectedCategory} tours and activities.
+            </p>
+          </div>
+
+          <h3 className="text-2xl font-bold mb-8">Popular {selectedCategory.charAt(0).toUpperCase() + selectedCategory.slice(1)} Tours</h3>
+          
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {[1, 2, 3].map((n) => (
+                <div key={n} className="bg-white rounded-2xl overflow-hidden shadow-lg animate-pulse">
+                  <div className="h-48 bg-gray-200" />
+                  <div className="p-6 space-y-4">
+                    <div className="h-4 bg-gray-200 rounded w-3/4" />
+                    <div className="h-4 bg-gray-200 rounded w-1/2" />
+                    <div className="h-4 bg-gray-200 rounded w-2/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {categoryTours.map((tour) => (
+                <div
+                  key={tour.place_id}
+                  className="bg-white rounded-2xl overflow-hidden shadow-lg hover:shadow-xl transition-shadow"
+                >
+                  <div className="relative h-48">
+                    <Image
+                      src={`https://maps.googleapis.com/maps/api/place/photo?maxwidth=400&photo_reference=${tour.photo_reference}&key=AIzaSyB4Pk-oT_sJ7u2XmcDmSeFcTLM08Ukkpv0`}
+                      alt={tour.name}
+                      fill
+                      className="object-cover"
+                    />
+                  </div>
+                  <div className="p-6">
+                    <h4 className="text-xl font-bold mb-2">{tour.name}</h4>
+                    <div className="flex items-center mb-4">
+                      <Star className="w-5 h-5 text-yellow-400 fill-yellow-400" />
+                      <span className="ml-2 text-gray-600">
+                        {tour.rating.toFixed(1)} ({tour.total_ratings} reviews)
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="text-gray-600">{tour.address}</div>
+                      <div className="text-xl font-bold text-blue-600">₹{tour.price}</div>
+                    </div>
+                    <Link
+                      href={`/tour/${tour.place_id}`}
+                      className="block w-full mt-4"
+                    >
+                      <button className="w-full bg-black text-white py-3 rounded-lg hover:bg-gray-800 transition-colors">
+                        View Details
+                      </button>
+                    </Link>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </section>
+      )}
     </main>
   );
 }
