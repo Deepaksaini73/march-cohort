@@ -7,6 +7,7 @@ import { ChevronRight, Star, MapPin, Users, Calendar, ChevronDown, Search } from
 import TravelExperience from './components/TravelExperience';
 import WhyTravelWithUs from './components/whyus/WhyTravelWithUs';
 import TestimonialSlider from './components/testimonials/TestimonialSlider';
+import SearchBar from './components/SearchBar';
 
 interface CategoryTour {
   name: string;
@@ -113,114 +114,27 @@ export default function HomePage() {
 
   return (
     <main className="min-h-screen bg-gray-50">
-      {/* Hero Section */}
-      <div className="relative h-[90vh] bg-cover bg-center" 
-           style={{ 
-             backgroundImage: 'url(https://images.unsplash.com/photo-1506953823976-52e1fdc0149a?auto=format&fit=crop&q=80)',
-             backgroundPosition: 'center 40%'
-           }}>
+      {/* Hero Section with Background */}
+      <div 
+        className="relative min-h-screen flex items-center justify-center bg-cover bg-center" 
+        style={{ 
+          backgroundImage: 'url(https://images.unsplash.com/photo-1682687220742-aba13b6e50ba?q=80&w=2070&auto=format&fit=crop)',
+          backgroundPosition: 'center 40%'
+        }}
+      >
         <div className="absolute inset-0 bg-black/40" />
-        <div className="absolute inset-0 flex flex-col justify-center px-4 max-w-7xl mx-auto">
-          <div className="space-y-6 max-w-4xl">
-            <span className="inline-block bg-yellow-400 text-black px-4 py-2 rounded-full text-sm font-medium">
-              Discovery the World
-            </span>
-            
-            <h1 className="text-5xl md:text-6xl font-bold text-white leading-tight">
-              Unleash Your Wanderlust<br />
-              Book Your Next Journey
+        <div className="relative z-10 w-full px-4 py-20">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-6xl font-bold text-white mb-6">
+              Discover Your Next Adventure
             </h1>
-            
-            <p className="text-xl text-white/90 max-w-2xl">
-              Crafting Exceptional Journeys: Your Global Escape Planner.<br />
-              Unleash Your Wanderlust: Seamless Travel, Extraordinary Adventures
+            <p className="text-xl text-white/90 mb-12">
+              Plan your perfect trip with our expert recommendations
             </p>
-
-            {/* Search Box */}
-            <div className="bg-white rounded-2xl p-4 mt-8 max-w-4xl shadow-lg">
-              {/* Tabs */}
-              <div className="flex gap-4 mb-6">
-                {['Tours', 'Budget', 'Rental', 'Activities'].map((tab) => (
-                  <button
-                    key={tab}
-                    onClick={() => setSelectedTab(tab)}
-                    className={`px-6 py-2 rounded-full text-sm font-medium transition-colors ${
-                      selectedTab === tab
-                        ? 'bg-blue-600 text-white'
-                        : 'text-gray-600 hover:bg-gray-100'
-                    }`}
-                  >
-                    {tab}
-                  </button>
-                ))}
-              </div>
-
-              {/* Search Form */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Where to?</label>
-                  <div className="relative">
-                    <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <input
-                      type="text"
-                      value={location}
-                      onChange={(e) => setLocation(e.target.value)}
-                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      placeholder="Location"
-                    />
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Guests</label>
-                  <div className="relative">
-                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <select
-                      value={guests}
-                      onChange={(e) => setGuests(Number(e.target.value))}
-                      className="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                      aria-label="Number of guests"
-                    >
-                      {[1, 2, 3, 4, 5, 6].map((num) => (
-                        <option key={num} value={num}>
-                          {num} guests
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  </div>
-                </div>
-
-                <div className="relative">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Days</label>
-                  <div className="relative">
-                    <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                    <select
-                      value={days}
-                      onChange={(e) => setDays(Number(e.target.value))}
-                      className="w-full pl-10 pr-10 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent appearance-none"
-                      aria-label="Number of days"
-                    >
-                      {[1, 2, 3, 4, 5, 6, 7].map((num) => (
-                        <option key={num} value={num}>
-                          {num} days
-                        </option>
-                      ))}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  </div>
-                </div>
-
-                <button
-                  className="bg-blue-600 hover:bg-blue-700 text-white rounded-lg px-8 py-3 font-medium flex items-center justify-center gap-2 transition-colors"
-                >
-                  <Search className="w-5 h-5" />
-                  Search
-                </button>
-              </div>
-            </div>
           </div>
+
+          {/* Search Bar */}
+          <SearchBar />
         </div>
       </div>
 
